@@ -16,20 +16,23 @@ Mod_Lina provides real-time monitoring and decision support for your colony oper
 
 ### Mode A: Advisor (Fully Implemented)
 
-**Hourly Monitoring & Alerts**
+#### Advisor Cadence & Alerts
 
 - **Survivor Stress**: Alerts when a survivor's composite stress score exceeds your configured threshold (default: 60).
 - **Survivor Hunger**: Alerts when a survivor's food level falls below your threshold (default: 20).
 - **Resource Reserves**: Alerts when Cloth reserves drop below your threshold (default: 20).
 - **Stalled Production**: Detects workbenches with queued tasks but no output for 4+ hours.
+- **Advisor Evaluation Rate**: Lina evaluates alert conditions once per in-game hour.
+- **HUD Refresh Rate**: Lina's HUD refreshes every 2 seconds in real time.
+- **Expanded Live HUD**: The HUD now shows top at-risk survivors and live per-survivor vitals in verbose/rollover views.
 
-**Smart Notifications**
+#### Smart Notifications
 
 - Per-alert-type cooldown prevents spam (customizable).
 - Category-based toggles let you enable/disable survivor, resource, or production alerts.
 - All notifications branded as "Mod_Lina – Survivor Assistant".
 
-**Persistent Configuration**
+#### Persistent Configuration
 
 - Thresholds saved per save game.
 - Global defaults provided for new games.
@@ -52,12 +55,13 @@ Both Semi-Auto and Full Automation modes are scaffolded with extension points re
 ### First Run
 
 When you load a map, Lina will display:
-```
+
+```text
 Mod_Lina – Survivor Assistant
 Lina online. Monitoring survivor wellbeing and colony status.
 ```
 
-Hourly alerts will begin automatically based on your configured thresholds.
+Hourly alerts will begin automatically based on your configured thresholds, while the HUD refreshes every 2 seconds for near-real-time status updates.
 
 ### Stress Formula
 
@@ -178,6 +182,14 @@ Lina prevents alert spam using per-type cooldown periods:
 - **Survivor Alerts**: 5 minutes per survivor (customizable)
 - **Resource Alerts**: 10 minutes global (customizable)
 - **Production Alerts**: 5 minutes per workbench (customizable)
+
+Alert cadence and backoff behavior:
+
+- Advisor checks run once per in-game hour, so notification conditions are not evaluated continuously.
+- Survivor cooldowns are tracked per survivor and per alert type, so the same survivor can trigger `stress` and `hunger` separately.
+- Resource cooldowns use a single global bucket, so repeated cloth shortages intentionally notify less often.
+- Production cooldowns are tracked per workbench.
+- HUD updates are separate from alert checks and refresh every 2 seconds, even when no new notifications are shown.
 
 Customize cooldowns with:
 ```lua

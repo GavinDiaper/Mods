@@ -32,6 +32,30 @@ local function abs(val)
 	return val
 end
 
+local function GetSurvivorName(survivor)
+	if not survivor then
+		return "Unknown"
+	end
+	if survivor.FirstName then
+		if IsT and IsT(survivor.FirstName) and rawget(_G, "_InternalTranslate") then
+			return _InternalTranslate(survivor.FirstName)
+		end
+		return tostring(survivor.FirstName)
+	end
+	if survivor.Name and IsT and IsT(survivor.Name) and rawget(_G, "_InternalTranslate") then
+		return _InternalTranslate(survivor.Name)
+	end
+	return tostring(survivor.Name or "Unknown")
+end
+
+local function TrimName(name, max_len)
+	name = tostring(name or "?")
+	if #name <= max_len then
+		return name
+	end
+	return string.sub(name, 1, max_len - 1) .. "."
+end
+
 local function GetEquipmentConditionPct(survivor)
 	if survivor.GetEquipmentConditionPct then
 		local ok, value = pcall(survivor.GetEquipmentConditionPct, survivor)
@@ -110,28 +134,98 @@ local function GetSurvivors()
 	return player.labels.Survivors
 end
 
-local function CountVitals()
+local function BuildVitalsSnapshot()
 	local stress_threshold = (ModLina.Config and ModLina.Config.GetThreshold and ModLina.Config.GetThreshold("stress")) or 60
 	local hunger_threshold = (ModLina.Config and ModLina.Config.GetThreshold and ModLina.Config.GetThreshold("hunger")) or 20
 	local hungry = 0
 	local stressed = 0
+	local entries = {}
 	for _, survivor in ipairs(GetSurvivors()) do
 		if survivor and IsValid(survivor) and not survivor:IsDead() then
-			local energy = survivor.EnergyAvailable
-			local max_energy = survivor.MaxEnergyAvailable
-			if energy ~= nil and max_energy and max_energy > 0 then
-				local hunger_pct = (energy * 100) / max_energy
-				if hunger_pct < hunger_threshold then
-					hungry = hungry + 1
-				end
-			end
+			local food_pct = safe_percent(survivor.EnergyAvailable or 0, survivor.MaxEnergyAvailable or 0)
 			local stress_score = CalculateCompositeStress(survivor)
+			local rest_pct = safe_percent((survivor.MaxFatigue or 0) - (survivor.Fatigue or 0), survivor.MaxFatigue or 0)
+			local mood_pct = survivor.GetIPHappiness and survivor:GetIPHappiness() or 100
+			local entry = {
+				name = GetSurvivorName(survivor),
+				stress = floor(clamp(stress_score, 0, 100) + 0.5),
+				food = floor(clamp(food_pct, 0, 100) + 0.5),
+				rest = floor(clamp(rest_pct, 0, 100) + 0.5),
+				mood = floor(clamp(mood_pct, 0, 100) + 0.5),
+				sleeping = survivor.sleeping == true,
+				bleeding = (survivor.Bleeding or 0) > 0,
+			}
+			entries[#entries + 1] = entry
+
+			if food_pct < hunger_threshold then
+				hungry = hungry + 1
+			end
 			if stress_score >= stress_threshold then
 				stressed = stressed + 1
 			end
 		end
 	end
-	return hungry, stressed
+
+	table.sort(entries, function(a, b)
+		if a.stress == b.stress then
+			if a.food == b.food then
+				return a.name < b.name
+			end
+			return a.food < b.food
+		end
+		return a.stress > b.stress
+	end)
+
+	return hungry, stressed, entries
+end
+
+local function BuildCompactVitalsLine(entries, max_entries)
+	if not entries or #entries == 0 then
+		return "Top: none"
+	end
+	local parts = {}
+	local limit = max_entries or 2
+	for i = 1, #entries do
+		if i > limit then
+			break
+		end
+		local e = entries[i]
+		local flags = ""
+		if e.bleeding then
+			flags = flags .. "!"
+		end
+		if e.sleeping then
+			flags = flags .. "z"
+		end
+		parts[#parts + 1] = string.format("%s S:%d F:%d%s", TrimName(e.name, 8), e.stress, e.food, flags ~= "" and (" " .. flags) or "")
+	end
+	return "Top: " .. table.concat(parts, " | ")
+end
+
+local function BuildVerboseVitalsLines(entries, max_entries)
+	if not entries or #entries == 0 then
+		return "No survivor vitals available"
+	end
+	local lines = {}
+	local limit = max_entries or 4
+	for i = 1, #entries do
+		if i > limit then
+			break
+		end
+		local e = entries[i]
+		local flags = ""
+		if e.bleeding then
+			flags = flags .. " !"
+		end
+		if e.sleeping then
+			flags = flags .. " z"
+		end
+		lines[#lines + 1] = string.format("%s  S:%d  F:%d  R:%d  M:%d%s", TrimName(e.name, 14), e.stress, e.food, e.rest, e.mood, flags)
+	end
+	if #entries > limit then
+		lines[#lines + 1] = string.format("+%d more survivors", #entries - limit)
+	end
+	return table.concat(lines, "\n")
 end
 
 local function GetClothCount()
@@ -150,21 +244,21 @@ local function TrimText(text, max_len)
 end
 
 local function BuildHudText()
-	local hungry, stressed = CountVitals()
+	local hungry, stressed, entries = BuildVitalsSnapshot()
 	local cloth = GetClothCount()
 	local mode = GetModeText()
 	local latest = (rawget(_G, "ModLinaState") and ModLinaState.latest_alert_text) or "No alerts yet"
 	local hud_mode = GetHudMode()
 	if hud_mode == "verbose" then
-		return string.format("<color 110 190 255>Lina Assistant</color>\nMode: %s\nHungry: %d | Stressed: %d\nCloth: %d\nLast: %s", mode, hungry, stressed, cloth, TrimText(latest, 180))
+		return string.format("<color 110 190 255>Lina Assistant</color>\nMode: %s\nHungry: %d | Stressed: %d | Cloth: %d\n%s\nLast: %s", mode, hungry, stressed, cloth, BuildVerboseVitalsLines(entries, 4), TrimText(latest, 180))
 	end
 	latest = TrimText(latest, 72)
-	return string.format("<color 110 190 255>Lina</color>  M:%s  H:%d  S:%d  Cloth:%d\n<color 220 220 170>Last:</color> %s", mode, hungry, stressed, cloth, latest)
+	return string.format("<color 110 190 255>Lina</color>  M:%s  H:%d  S:%d  Cloth:%d\n<color 180 220 255>%s</color>\n<color 220 220 170>Last:</color> %s", mode, hungry, stressed, cloth, TrimText(BuildCompactVitalsLine(entries, 2), 72), latest)
 end
 
 local function BuildRolloverText()
 	local mode = GetModeText()
-	local hungry, stressed = CountVitals()
+	local hungry, stressed, entries = BuildVitalsSnapshot()
 	local cloth = GetClothCount()
 	local latest = (rawget(_G, "ModLinaState") and ModLinaState.latest_alert_text) or "No alerts yet"
 	local last_time = (rawget(_G, "ModLinaState") and ModLinaState.latest_alert_time) or 0
@@ -173,7 +267,7 @@ local function BuildRolloverText()
 		local sec = Max(0, (RealTime() - last_time) / 1000)
 		ago = string.format("%.0fs", sec)
 	end
-	return string.format("Mode: %s\nHungry survivors: %d\nStressed survivors: %d\nCloth: %d\nLatest alert (%s ago):\n%s", mode, hungry, stressed, cloth, ago, tostring(latest))
+	return string.format("Mode: %s\nHungry survivors: %d\nStressed survivors: %d\nCloth: %d\n\nLive vitals:\n%s\n\nLatest alert (%s ago):\n%s", mode, hungry, stressed, cloth, BuildVerboseVitalsLines(entries, 8), ago, tostring(latest))
 end
 
 local function GetHudParent(igi)
