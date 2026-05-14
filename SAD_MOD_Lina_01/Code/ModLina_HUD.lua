@@ -10,6 +10,7 @@ ModLina.HUD = ModLina.HUD or {}
 local REFRESH_MS = 2000
 local HUD_ID = "idModLinaHud"
 local HUD_TEXT_ID = "idModLinaHudText"
+local floor = math.floor
 
 local function IsHudEnabled()
 	if ModLina.Config and ModLina.Config.IsHudVisible then
@@ -41,28 +42,32 @@ local function GetSurvivors()
 end
 
 local function CountVitals()
-	local stress_threshold = (ModLina.Config and ModLina.Config.GetThreshold and ModLina.Config.GetThreshold("stress")) or 80
+	local stress_threshold = (ModLina.Config and ModLina.Config.GetThreshold and ModLina.Config.GetThreshold("stress")) or 60
 	local hunger_threshold = (ModLina.Config and ModLina.Config.GetThreshold and ModLina.Config.GetThreshold("hunger")) or 20
 	local hungry = 0
 	local stressed = 0
-	for _, survivor in ipairs(GetSurvivors()) do
-		if survivor and IsValid(survivor) and not survivor:IsDead() then
-			local energy = survivor.EnergyAvailable
-			local max_energy = survivor.MaxEnergyAvailable
-			if energy ~= nil and max_energy and max_energy > 0 then
-				local hunger_pct = (energy * 100) / max_energy
-				if hunger_pct < hunger_threshold then
-					hungry = hungry + 1
-				end
-			end
-			-- Use relaxation indicator (low relax = high stress, similar to InfoBeacon pattern)
-			local relax = (survivor.GetRelaxationPct and survivor:GetRelaxationPct()) or 100
-			if relax ~= nil and relax < stress_threshold then
-				stressed = stressed + 1
-			end
+	local total_stress = 0
+	local peak_stress = 0
+	local entries = (ModLina.GetVitals and ModLina.GetVitals()) or (empty_table or {})
+	for _, entry in ipairs(entries) do
+		local food = entry.food or 0
+		local stress_level = entry.stress_level or 0
+		if food < hunger_threshold then
+			hungry = hungry + 1
+		end
+		if stress_level >= stress_threshold then
+			stressed = stressed + 1
+		end
+		total_stress = total_stress + stress_level
+		if stress_level > peak_stress then
+			peak_stress = stress_level
 		end
 	end
-	return hungry, stressed
+	local avg_stress = 0
+	if #entries > 0 then
+		avg_stress = floor((total_stress / #entries) + 0.5)
+	end
+	return hungry, stressed, avg_stress, peak_stress
 end
 
 local function GetClothCount()
@@ -81,21 +86,21 @@ local function TrimText(text, max_len)
 end
 
 local function BuildHudText()
-	local hungry, stressed = CountVitals()
+	local hungry, stressed, avg_stress, peak_stress = CountVitals()
 	local cloth = GetClothCount()
 	local mode = GetModeText()
 	local latest = (rawget(_G, "ModLinaState") and ModLinaState.latest_alert_text) or "No alerts yet"
 	local hud_mode = GetHudMode()
 	if hud_mode == "verbose" then
-		return string.format("<color 110 190 255>Lina Assistant</color>\nMode: %s\nHungry: %d | Stressed: %d\nCloth: %d\nLast: %s", mode, hungry, stressed, cloth, TrimText(latest, 180))
+		return string.format("<color 110 190 255>Lina Assistant</color>\nMode: %s\nHungry: %d | Stressed: %d | Avg stress: %d%% | Peak: %d%%\nCloth: %d\nLast: %s", mode, hungry, stressed, avg_stress, peak_stress, cloth, TrimText(latest, 180))
 	end
 	latest = TrimText(latest, 72)
-	return string.format("<color 110 190 255>Lina</color>  M:%s  H:%d  S:%d  Cloth:%d\n<color 220 220 170>Last:</color> %s", mode, hungry, stressed, cloth, latest)
+	return string.format("<color 110 190 255>Lina</color>  M:%s  H:%d  S:%d  St:%d%%  Cloth:%d\n<color 220 220 170>Last:</color> %s", mode, hungry, stressed, avg_stress, cloth, latest)
 end
 
 local function BuildRolloverText()
 	local mode = GetModeText()
-	local hungry, stressed = CountVitals()
+	local hungry, stressed, avg_stress, peak_stress = CountVitals()
 	local cloth = GetClothCount()
 	local latest = (rawget(_G, "ModLinaState") and ModLinaState.latest_alert_text) or "No alerts yet"
 	local last_time = (rawget(_G, "ModLinaState") and ModLinaState.latest_alert_time) or 0
@@ -104,7 +109,7 @@ local function BuildRolloverText()
 		local sec = Max(0, (RealTime() - last_time) / 1000)
 		ago = string.format("%.0fs", sec)
 	end
-	return string.format("Mode: %s\nHungry survivors: %d\nStressed survivors: %d\nCloth: %d\nLatest alert (%s ago):\n%s", mode, hungry, stressed, cloth, ago, tostring(latest))
+	return string.format("Mode: %s\nHungry survivors: %d\nStressed survivors: %d\nAvg stress: %d%%\nPeak stress: %d%%\nCloth: %d\nLatest alert (%s ago):\n%s", mode, hungry, stressed, avg_stress, peak_stress, cloth, ago, tostring(latest))
 end
 
 local function GetHudParent(igi)

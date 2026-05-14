@@ -37,39 +37,37 @@ end
 
 function ModLina.Advisor.CheckSurvivorStress()
 	local stress_threshold = ModLina.Config.GetThreshold("stress")
-	
-	for _, survivor in ipairs(GetSurvivors()) do
-		if survivor and IsValid(survivor) and not survivor:IsDead() then
-			-- Use relaxation indicator (low relax = high stress, similar to InfoBeacon pattern)
-			local relax = (survivor.GetRelaxationPct and survivor:GetRelaxationPct()) or 100
-			if relax ~= nil and relax < stress_threshold then
-				ModLina.Notify.SurvivorAlert(
-					GetSurvivorName(survivor),
-					T(732519874108, "is highly stressed. Consider scheduling rest or relaxation."),
-					"stress"
-				)
-				end
+	local vitals = (ModLina.GetVitals and ModLina.GetVitals()) or (empty_table or {})
+	local stress_message = T(732519874108, "is highly stressed. Consider scheduling rest or relaxation. (Stress: %d%%)")
+	if rawget(_G, "_InternalTranslate") then
+		stress_message = _InternalTranslate(stress_message)
+	else
+		stress_message = tostring(stress_message)
+	end
+
+	for _, entry in ipairs(vitals) do
+		local stress_level = entry.stress_level or 0
+		if stress_level >= stress_threshold then
+			ModLina.Notify.SurvivorAlert(
+				entry.name or "Unknown",
+				string.format(stress_message, stress_level),
+				"stress"
+			)
 		end
 	end
 end
 
 function ModLina.Advisor.CheckSurvivorHunger()
 	local hunger_threshold = ModLina.Config.GetThreshold("hunger")
-	
-	for _, survivor in ipairs(GetSurvivors()) do
-		if survivor and IsValid(survivor) and not survivor:IsDead() then
-			local energy = survivor.EnergyAvailable
-			local max_energy = survivor.MaxEnergyAvailable
-			if energy ~= nil and max_energy and max_energy > 0 then
-				local hunger_pct = (energy * 100) / max_energy
-				if hunger_pct < hunger_threshold then
-				ModLina.Notify.SurvivorAlert(
-					GetSurvivorName(survivor),
-					T(732519874109, "is hungry. Prioritize meal production."),
-					"hunger"
-				)
-				end
-			end
+	local vitals = (ModLina.GetVitals and ModLina.GetVitals()) or (empty_table or {})
+
+	for _, entry in ipairs(vitals) do
+		if (entry.food or 0) < hunger_threshold then
+			ModLina.Notify.SurvivorAlert(
+				entry.name or "Unknown",
+				T(732519874109, "is hungry. Prioritize meal production."),
+				"hunger"
+			)
 		end
 	end
 end
