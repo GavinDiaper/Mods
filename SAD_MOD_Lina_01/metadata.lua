@@ -5,7 +5,7 @@ return PlaceObj('ModDef', {
 	'last_changes', "Initial v1 release: Advisor Mode fully implemented, Semi-Auto and Full-Auto scaffolding.",
 	'id', "ModLina01",
 	'author', "Gavin",
-	'version', 7,
+	'version', 8,
 	'lua_revision', 233360,
 	'saved_with_revision', 373414,
 	'code', {

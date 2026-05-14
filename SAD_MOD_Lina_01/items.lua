@@ -50,8 +50,10 @@ PlaceObj('ModItemOptionChoice', {
 	'DisplayName', T(732519874114, "Mode"),
 	'Help', T(732519874114, "Mode"),
 	'DefaultValue', "A",
-	'Choices', {
-		"A", "B", "C",
+	'ChoiceList', {
+		"A",
+		"B",
+		"C",
 	},
 	'OnApply', function(self, value, prev_value)
 		if ModLina and ModLina.Config then
@@ -164,8 +166,9 @@ PlaceObj('ModItemOptionChoice', {
 	'DisplayName', "Lina HUD Mode",
 	'Help', "Choose compact or verbose HUD layout.",
 	'DefaultValue', "compact",
-	'Choices', {
-		"compact", "verbose",
+	'ChoiceList', {
+		"compact",
+		"verbose",
 	},
 	'OnApply', function(self, value, prev_value)
 		if ModLina and ModLina.Config then
