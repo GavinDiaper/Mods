@@ -10,6 +10,76 @@ ModLina.HUD = ModLina.HUD or {}
 local REFRESH_MS = 2000
 local HUD_ID = "idModLinaHud"
 local HUD_TEXT_ID = "idModLinaHudText"
+local function floor(val)
+	return val - (val % 1)
+end
+
+local function clamp(val, min_val, max_val)
+	if val < min_val then return min_val end
+	if val > max_val then return max_val end
+	return val
+end
+
+local function safe_percent(num, denom)
+	if not denom or denom == 0 then
+		return 0
+	end
+	return (num * 100) / denom
+end
+
+local function abs(val)
+	if val < 0 then return -val end
+	return val
+end
+
+local function GetEquipmentConditionPct(survivor)
+	if survivor.GetEquipmentConditionPct then
+		local ok, value = pcall(survivor.GetEquipmentConditionPct, survivor)
+		if ok and value ~= nil then
+			return clamp(value, 0, 100)
+		end
+	end
+	local raw = survivor.EquipmentConditionPct or survivor.equipment_condition_pct or 100
+	return clamp(raw, 0, 100)
+end
+
+local function CalculateCompositeStress(survivor)
+	local hp = survivor.GetUnitHealthPercent and survivor:GetUnitHealthPercent() or 100
+	local food = safe_percent(survivor.EnergyAvailable or 0, survivor.MaxEnergyAvailable or 0)
+	local rest = safe_percent((survivor.MaxFatigue or 0) - (survivor.Fatigue or 0), survivor.MaxFatigue or 0)
+	local mood = survivor.GetIPHappiness and survivor:GetIPHappiness() or 100
+	local relax = survivor.GetRelaxationPct and survivor:GetRelaxationPct() or 100
+	local temp = survivor.temperature_perception or 0
+	local bleed = (survivor.Bleeding or 0) / 1000
+	local sleeping = survivor.sleeping == true
+	local equip = GetEquipmentConditionPct(survivor)
+
+	local distress_risk = 0.6 * (100 - clamp(relax, 0, 100)) + 0.4 * (100 - clamp(mood, 0, 100))
+	local hunger_risk = 100 - clamp(food, 0, 100)
+	local fatigue_risk = 100 - clamp(rest, 0, 100)
+	local health_risk = 100 - clamp(hp, 0, 100)
+	local bleed_risk = clamp(bleed * 100, 0, 100)
+	temp = clamp(abs(temp) * 125, 0, 100)
+	local equip_risk = 100 - clamp(equip, 0, 100)
+
+	local stress =
+		distress_risk * 0.30 +
+		hunger_risk * 0.23 +
+		fatigue_risk * 0.17 +
+		health_risk * 0.15 +
+		bleed_risk * 0.10 +
+		temp * 0.05 +
+		equip_risk * 0.00
+
+	if sleeping then
+		stress = stress - 5
+	end
+	if bleed_risk >= 25 then
+		stress = stress + 5
+	end
+
+	return floor(clamp(stress, 0, 100) + 0.5)
+end
 
 local function IsHudEnabled()
 	if ModLina.Config and ModLina.Config.IsHudVisible then
@@ -41,7 +111,7 @@ local function GetSurvivors()
 end
 
 local function CountVitals()
-	local stress_threshold = (ModLina.Config and ModLina.Config.GetThreshold and ModLina.Config.GetThreshold("stress")) or 80
+	local stress_threshold = (ModLina.Config and ModLina.Config.GetThreshold and ModLina.Config.GetThreshold("stress")) or 60
 	local hunger_threshold = (ModLina.Config and ModLina.Config.GetThreshold and ModLina.Config.GetThreshold("hunger")) or 20
 	local hungry = 0
 	local stressed = 0
@@ -55,9 +125,8 @@ local function CountVitals()
 					hungry = hungry + 1
 				end
 			end
-			-- Use relaxation indicator (low relax = high stress, similar to InfoBeacon pattern)
-			local relax = (survivor.GetRelaxationPct and survivor:GetRelaxationPct()) or 100
-			if relax ~= nil and relax < stress_threshold then
+			local stress_score = CalculateCompositeStress(survivor)
+			if stress_score >= stress_threshold then
 				stressed = stressed + 1
 			end
 		end
