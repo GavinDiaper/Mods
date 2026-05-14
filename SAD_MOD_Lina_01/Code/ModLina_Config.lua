@@ -17,7 +17,7 @@ local CONFIG_DEFAULTS = {
 
 	-- Thresholds for Advisor alerts
 	thresholds = {
-		stress = 60,      -- Alert if composite survivor stress score > this
+		stress = 60,      -- Alert if survivor stress > this (mood < 40)
 		hunger = 20,      -- Alert if survivor food < this
 		cloth = 20,       -- Alert if Cloth resource < this
 	},
