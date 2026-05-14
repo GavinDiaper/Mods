@@ -65,12 +65,12 @@ PlaceObj('ModItemOptionNumber', {
 	'name', "StressThreshold",
 	'DisplayName', T(732519874115, "Stress Alert Threshold"),
 	'Help', T(732519874115, "Stress Alert Threshold"),
-	'DefaultValue', 80,
+	'DefaultValue', 60,
 	'MinValue', 0,
 	'MaxValue', 100,
 	'OnApply', function(self, value, prev_value)
 		if ModLina and ModLina.Config then
-			ModLina.Config.SetThreshold("stress", tonumber(value) or 80)
+			ModLina.Config.SetThreshold("stress", tonumber(value) or 60)
 		end
 	end,
 }),

@@ -40,7 +40,8 @@ function ModLina.Advisor.CheckSurvivorStress()
 	
 	for _, survivor in ipairs(GetSurvivors()) do
 		if survivor and IsValid(survivor) and not survivor:IsDead() then
-			local mood = survivor.GetIPHappiness and survivor:GetIPHappiness() or nil
+			local mood
+			if survivor.GetIPHappiness then mood = survivor:GetIPHappiness() end
 			if mood ~= nil then
 				local stress = 100 - mood
 				if stress > stress_threshold then

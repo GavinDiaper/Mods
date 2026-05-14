@@ -55,7 +55,8 @@ local function CountVitals()
 					hungry = hungry + 1
 				end
 			end
-			local mood = survivor.GetIPHappiness and survivor:GetIPHappiness() or nil
+			local mood
+			if survivor.GetIPHappiness then mood = survivor:GetIPHappiness() end
 			if mood ~= nil and (100 - mood) > stress_threshold then
 				stressed = stressed + 1
 			end
