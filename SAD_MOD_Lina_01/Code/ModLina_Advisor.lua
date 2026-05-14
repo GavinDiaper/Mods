@@ -40,18 +40,15 @@ function ModLina.Advisor.CheckSurvivorStress()
 	
 	for _, survivor in ipairs(GetSurvivors()) do
 		if survivor and IsValid(survivor) and not survivor:IsDead() then
-			local mood
-			if survivor.GetIPHappiness then mood = survivor:GetIPHappiness() end
-			if mood ~= nil then
-				local stress = 100 - mood
-				if stress > stress_threshold then
+			-- Use relaxation indicator (low relax = high stress, similar to InfoBeacon pattern)
+			local relax = (survivor.GetRelaxationPct and survivor:GetRelaxationPct()) or 100
+			if relax ~= nil and relax < stress_threshold then
 				ModLina.Notify.SurvivorAlert(
 					GetSurvivorName(survivor),
 					T(732519874108, "is highly stressed. Consider scheduling rest or relaxation."),
 					"stress"
 				)
 				end
-			end
 		end
 	end
 end

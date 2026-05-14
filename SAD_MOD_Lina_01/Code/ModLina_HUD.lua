@@ -55,9 +55,9 @@ local function CountVitals()
 					hungry = hungry + 1
 				end
 			end
-			local mood
-			if survivor.GetIPHappiness then mood = survivor:GetIPHappiness() end
-			if mood ~= nil and (100 - mood) > stress_threshold then
+			-- Use relaxation indicator (low relax = high stress, similar to InfoBeacon pattern)
+			local relax = (survivor.GetRelaxationPct and survivor:GetRelaxationPct()) or 100
+			if relax ~= nil and relax < stress_threshold then
 				stressed = stressed + 1
 			end
 		end
