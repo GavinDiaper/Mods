@@ -18,7 +18,7 @@ Mod_Lina provides real-time monitoring and decision support for your colony oper
 
 **Hourly Monitoring & Alerts**
 
-- **Survivor Stress**: Alerts when a survivor's stress exceeds your configured threshold (default: 80).
+- **Survivor Stress**: Alerts when a survivor's composite stress score exceeds your configured threshold (default: 60).
 - **Survivor Hunger**: Alerts when a survivor's food level falls below your threshold (default: 20).
 - **Resource Reserves**: Alerts when Cloth reserves drop below your threshold (default: 20).
 - **Stalled Production**: Detects workbenches with queued tasks but no output for 4+ hours.
@@ -59,6 +59,75 @@ Lina online. Monitoring survivor wellbeing and colony status.
 
 Hourly alerts will begin automatically based on your configured thresholds.
 
+### Stress Formula
+
+Lina now evaluates stress as a weighted composite score rather than a single relaxation check.
+
+The implementation first converts each survivor condition into a normalized risk value from `0` to `100`, where larger values mean more stress pressure. It then applies the weighted sum below:
+
+```text
+StressScore = clamp(
+   DistressRisk * 0.30 +
+   HungerRisk   * 0.23 +
+   FatigueRisk  * 0.17 +
+   HealthRisk   * 0.15 +
+   BleedRisk    * 0.10 +
+   TempRisk     * 0.05 +
+   EquipRisk    * 0.00 +
+   Modifiers,
+   0,
+   100
+)
+```
+
+Expanded summation logic:
+
+```text
+BaseStress =
+   (DistressRisk * 0.30) +
+   (HungerRisk   * 0.23) +
+   (FatigueRisk  * 0.17) +
+   (HealthRisk   * 0.15) +
+   (BleedRisk    * 0.10) +
+   (TempRisk     * 0.05) +
+   (EquipRisk    * 0.00)
+
+StressScore = clamp(BaseStress + Modifiers, 0, 100)
+```
+
+Current weights:
+
+- `0.30` Distress: the largest contributor, based on low relaxation and low mood.
+- `0.23` Hunger: strong pressure from low available food/energy.
+- `0.17` Fatigue: pressure from low rest reserve.
+- `0.15` Health: direct penalty from injury or poor health.
+- `0.10` Bleeding: additional pressure from active bleeding.
+- `0.05` Temperature: minor pressure from hot/cold discomfort.
+- `0.00` Equipment: reserved for future use; collected safely but not currently counted.
+
+Component details:
+
+- `DistressRisk = 0.6 * (100 - RelaxationPct) + 0.4 * (100 - MoodPct)`
+- `HungerRisk = 100 - FoodPct`
+- `FatigueRisk = 100 - RestPct`
+- `HealthRisk = 100 - HealthPct`
+- `BleedRisk = clamp(BleedingNormalized * 100, 0, 100)`
+- `TempRisk = clamp(abs(TemperaturePerception) * 125, 0, 100)`
+- `EquipRisk = 100 - EquipmentConditionPct` (currently collected with safe fallback, but weighted at `0.00`)
+
+Applied modifiers:
+
+- Sleeping survivors receive `-5` stress.
+- Survivors with meaningful bleeding receive `+5` stress.
+
+In practical terms, this means Lina is evaluating stress as a single capped score composed of:
+
+```text
+30% distress + 23% hunger + 17% fatigue + 15% health + 10% bleeding + 5% temperature + modifiers
+```
+
+The configured `stress` threshold still uses the same `0-100` range, but it now compares against this composite score.
+
 ---
 
 ## Configuration
@@ -82,7 +151,7 @@ ModLina_SetMode("C")  -- Full-Auto (scaffolded)
 
 #### Set Thresholds
 ```lua
-ModLina_SetThreshold("stress", 75)    -- Stress alert threshold (0-100)
+ModLina_SetThreshold("stress", 75)    -- Composite stress alert threshold (0-100)
 ModLina_SetThreshold("hunger", 15)    -- Hunger alert threshold (0-100)
 ModLina_SetThreshold("cloth", 50)     -- Cloth reserve threshold (any value)
 ```
