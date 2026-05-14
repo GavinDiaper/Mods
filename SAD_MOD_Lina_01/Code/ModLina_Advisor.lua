@@ -29,6 +29,52 @@ local function abs(val)
 	return val
 end
 
+local function GetResourceCount(resource_name, aliases)
+	if not rawget(_G, "Resources") or not Resources then
+		return 0
+	end
+
+	local names = { resource_name }
+	if aliases then
+		for i = 1, #aliases do
+			names[#names + 1] = aliases[i]
+		end
+	end
+
+	for i = 1, #names do
+		local name = names[i]
+		local direct = Resources[name]
+		if direct ~= nil then
+			local count = tonumber(direct) or 0
+			if count > 0 or i == #names then
+				return count
+			end
+		end
+
+		if Resources.GetResourceAmount then
+			local ok, value = pcall(Resources.GetResourceAmount, Resources, name)
+			if ok and value ~= nil then
+				local count = tonumber(value) or 0
+				if count > 0 or i == #names then
+					return count
+				end
+			end
+		end
+
+		if Resources.GetCount then
+			local ok, value = pcall(Resources.GetCount, Resources, name)
+			if ok and value ~= nil then
+				local count = tonumber(value) or 0
+				if count > 0 or i == #names then
+					return count
+				end
+			end
+		end
+	end
+
+	return 0
+end
+
 local function GetSurvivors()
 	local player = rawget(_G, "UIPlayer") and UIPlayer
 	if not player or not player.labels or not player.labels.Survivors then
@@ -154,7 +200,7 @@ function ModLina.Advisor.CheckResources()
 	end
 
 	local cloth_threshold = ModLina.Config.GetThreshold("cloth")
-	local cloth_count = (Resources and Resources["Cloth"]) or 0
+	local cloth_count = GetResourceCount("Cloth", { "Fabric" })
 	
 	if cloth_count < cloth_threshold then
 		ModLina.Notify.ResourceAlert(

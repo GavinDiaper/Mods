@@ -32,6 +32,52 @@ local function abs(val)
 	return val
 end
 
+local function GetResourceCount(resource_name, aliases)
+	if not rawget(_G, "Resources") or not Resources then
+		return 0
+	end
+
+	local names = { resource_name }
+	if aliases then
+		for i = 1, #aliases do
+			names[#names + 1] = aliases[i]
+		end
+	end
+
+	for i = 1, #names do
+		local name = names[i]
+		local direct = Resources[name]
+		if direct ~= nil then
+			local count = tonumber(direct) or 0
+			if count > 0 or i == #names then
+				return count
+			end
+		end
+
+		if Resources.GetResourceAmount then
+			local ok, value = pcall(Resources.GetResourceAmount, Resources, name)
+			if ok and value ~= nil then
+				local count = tonumber(value) or 0
+				if count > 0 or i == #names then
+					return count
+				end
+			end
+		end
+
+		if Resources.GetCount then
+			local ok, value = pcall(Resources.GetCount, Resources, name)
+			if ok and value ~= nil then
+				local count = tonumber(value) or 0
+				if count > 0 or i == #names then
+					return count
+				end
+			end
+		end
+	end
+
+	return 0
+end
+
 local function GetSurvivorName(survivor)
 	if not survivor then
 		return "Unknown"
@@ -229,10 +275,7 @@ local function BuildVerboseVitalsLines(entries, max_entries)
 end
 
 local function GetClothCount()
-	if rawget(_G, "Resources") and Resources then
-		return tonumber(Resources["Cloth"]) or 0
-	end
-	return 0
+	return GetResourceCount("Cloth", { "Fabric" })
 end
 
 local function TrimText(text, max_len)
