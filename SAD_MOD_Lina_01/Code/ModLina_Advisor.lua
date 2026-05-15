@@ -280,6 +280,17 @@ function ModLina.Advisor.CheckStalledWorkbenches()
 end
 
 ---------------------------------------------------------------------------
+-- THREAT CHECKS (AI SKILLS LAYER)
+---------------------------------------------------------------------------
+
+function ModLina.Advisor.CheckThreats()
+	-- Delegates to AI_Planner threat checking
+	if rawget(_G, "ModLina") and ModLina.CheckThreats then
+		ModLina.CheckThreats()
+	end
+end
+
+---------------------------------------------------------------------------
 -- MAIN CHECK DISPATCHER
 ---------------------------------------------------------------------------
 
@@ -288,4 +299,16 @@ function ModLina.Advisor.CheckAll()
 	ModLina.Advisor.CheckSurvivorHunger()
 	ModLina.Advisor.CheckResources()
 	ModLina.Advisor.CheckStalledWorkbenches()
+	ModLina.Advisor.CheckThreats()
+end
+
+---------------------------------------------------------------------------
+-- CHAT INTERFACE (Future UI Integration)
+---------------------------------------------------------------------------
+
+function ModLina.Advisor.Chat(text)
+	-- Delegates to AI_Planner chat interface
+	if rawget(_G, "ModLina") and ModLina.Chat then
+		ModLina.Chat(text)
+	end
 end

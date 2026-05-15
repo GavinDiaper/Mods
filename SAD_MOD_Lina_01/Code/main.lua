@@ -57,3 +57,25 @@ function OnMsg.ModsReloaded()
 		ModLinaState.initialized = false
 	end
 end
+
+---------------------------------------------------------------------------
+-- COMBAT START - Threat Detection
+---------------------------------------------------------------------------
+
+function OnMsg.CombatStart()
+	if rawget(_G, "ModLina") and ModLina.CheckThreats then
+		ModLina.CheckThreats()
+	end
+end
+
+---------------------------------------------------------------------------
+-- UNIT SPAWNED - Enemy Detection
+---------------------------------------------------------------------------
+
+function OnMsg.UnitSpawned(unit)
+	if unit and unit:IsHostile() then
+		if rawget(_G, "ModLina") and ModLina.UpdateState then
+			ModLina.UpdateState()
+		end
+	end
+end

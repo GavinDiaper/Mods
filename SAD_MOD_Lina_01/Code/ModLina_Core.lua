@@ -40,6 +40,19 @@ function ModLina.Initialize()
 	if ModLina.Config and ModLina.Config.LoadSettings then
 		ModLina.Config.LoadSettings()
 	end
+	
+	-- Initialize AI state snapshot system
+	if ModLina.UpdateState then
+		ModLina.UpdateState()
+		if ModLina.Notify and ModLina.Notify.LinaSay then
+			ModLina.Notify.LinaSay("AI threat monitoring system online.")
+		end
+	end
+	
+	-- Start threat monitoring loop
+	if ModLina.StartThreatMonitoring then
+		ModLina.StartThreatMonitoring()
+	end
 end
 
 ---------------------------------------------------------------------------
