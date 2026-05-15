@@ -73,9 +73,55 @@ end
 ---------------------------------------------------------------------------
 
 function OnMsg.UnitSpawned(unit)
-	if unit and unit:IsHostile() then
-		if rawget(_G, "ModLina") and ModLina.UpdateState then
-			ModLina.UpdateState()
+	if not unit then
+		return
+	end
+	if rawget(_G, "IsKindOf") and not (IsKindOf(unit, "UnitAnimal") or IsKindOf(unit, "UnitInvader") or IsKindOf(unit, "Robot") or IsKindOf(unit, "CombatRobot")) then
+		return
+	end
+
+	local hostile = false
+	if unit.IsHostile then
+		local ok, is_hostile = pcall(unit.IsHostile, unit)
+		hostile = ok and is_hostile and true or false
+	else
+		hostile = unit.CombatHostile == true or unit.Invader == true
+	end
+
+	if hostile and rawget(_G, "ModLina") and ModLina.UpdateState then
+		ModLina.UpdateState()
+		if ModLina.CheckThreats then
+			ModLina.CheckThreats()
+		end
+	end
+end
+
+---------------------------------------------------------------------------
+-- RAID-SPECIFIC SPAWN HOOKS
+---------------------------------------------------------------------------
+
+function OnMsg.SpawnedAnimalThreat(unit)
+	if rawget(_G, "ModLina") and ModLina.UpdateState then
+		ModLina.UpdateState()
+		if ModLina.CheckThreats then
+			ModLina.CheckThreats()
+		elseif ModLina.Notify and ModLina.Notify.LinaSay then
+			ModLina.Notify.LinaSay("Threat detected: hostile wildlife approaching the colony.")
+		end
+	end
+end
+
+function OnMsg.SpawnedAnimalPest(unit)
+	if rawget(_G, "ModLina") and ModLina.Notify and ModLina.Notify.LinaSay then
+		ModLina.Notify.LinaSay("Threat detected: a pest wave has appeared.")
+	end
+end
+
+function OnMsg.InvaderBehaviorAssign(unit, new_behavior)
+	if rawget(_G, "ModLina") and ModLina.UpdateState then
+		ModLina.UpdateState()
+		if ModLina.CheckThreats then
+			ModLina.CheckThreats()
 		end
 	end
 end

@@ -57,7 +57,7 @@ function ModLina.Notify.SendRaw(title, message)
 end
 
 function ModLina.Notify.LinaSay(message)
-	local title = T(732519874107, "Mod_Lina – Survivor Assistant")
+	local title = "Mod_Lina - Survivor Assistant"
 	RecordLatestAlert(message)
 	ModLina.Notify.SendRaw(title, message)
 end

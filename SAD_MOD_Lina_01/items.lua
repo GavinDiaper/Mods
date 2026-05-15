@@ -20,6 +20,22 @@ PlaceObj('ModItemCode', {
 	'CodeFileName', "Code/ModLina_Advisor.lua",
 }),
 PlaceObj('ModItemCode', {
+	'name', "ModLina_AI_State",
+	'CodeFileName', "Code/AI_State.lua",
+}),
+PlaceObj('ModItemCode', {
+	'name', "ModLina_AI_Skills",
+	'CodeFileName', "Code/AI_Skills.lua",
+}),
+PlaceObj('ModItemCode', {
+	'name', "ModLina_AI_LLM",
+	'CodeFileName', "Code/AI_LLM.lua",
+}),
+PlaceObj('ModItemCode', {
+	'name', "ModLina_AI_Planner",
+	'CodeFileName', "Code/AI_Planner.lua",
+}),
+PlaceObj('ModItemCode', {
 	'name', "ModLina_SemiAuto",
 	'CodeFileName', "Code/ModLina_SemiAuto.lua",
 }),

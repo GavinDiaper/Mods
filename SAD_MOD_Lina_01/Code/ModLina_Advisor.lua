@@ -161,7 +161,7 @@ function ModLina.Advisor.CheckSurvivorStress()
 			if stress_score >= stress_threshold then
 				ModLina.Notify.SurvivorAlert(
 					GetSurvivorName(survivor),
-					T(732519874108, "is highly stressed. Consider scheduling rest or relaxation."),
+					"is highly stressed. Consider scheduling rest or relaxation.",
 					"stress"
 				)
 			end
@@ -181,7 +181,7 @@ function ModLina.Advisor.CheckSurvivorHunger()
 				if hunger_pct < hunger_threshold then
 				ModLina.Notify.SurvivorAlert(
 					GetSurvivorName(survivor),
-					T(732519874109, "is hungry. Prioritize meal production."),
+					"is hungry. Prioritize meal production.",
 					"hunger"
 				)
 				end
@@ -204,7 +204,7 @@ function ModLina.Advisor.CheckResources()
 	
 	if cloth_count < cloth_threshold then
 		ModLina.Notify.ResourceAlert(
-			T(732519874110, "Cloth reserves are low. Recommend increasing tailoring priority.")
+			"Cloth reserves are low. Recommend increasing tailoring priority."
 		)
 	end
 end
@@ -268,7 +268,7 @@ function ModLina.Advisor.CheckStalledWorkbenches()
 			local workbench_name = workbench.display_name or workbench.class or "Unknown Workbench"
 			ModLina.Notify.ProductionAlert(
 				workbench_id,
-				T(732519874111, workbench_name .. " appears to be stalled. Check resource availability and task queue.")
+				tostring(workbench_name) .. " appears to be stalled. Check resource availability and task queue."
 			)
 			
 			-- Reset so we don't spam alerts
