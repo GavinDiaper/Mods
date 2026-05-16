@@ -86,7 +86,7 @@ local CONFIG_DEFAULTS = {
 		endpoint = "https://gavin-mh49j2cg-eastus2.cognitiveservices.azure.com/",
 		model = "gpt-5-mini",
 		deployment = "gpt-5-mini",
-		api_version = "2024-04-01-preview",
+		api_version = "2025-01-01-preview",
 	},
 
 	-- AI call governance (cloud calls are disabled by default)

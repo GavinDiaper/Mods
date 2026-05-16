@@ -287,8 +287,7 @@ function ModLina.BuildAzureChatRequest(user_request)
         },
         tools = build_tool_schemas(),
         tool_choice = "required",
-        parallel_tool_calls = false,
-        max_completion_tokens = 300,
+        max_completion_tokens = 500,
     }
 
     local body_json, encode_err = json_encode(request_body)
