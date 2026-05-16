@@ -7,6 +7,49 @@ end
 
 ModLina.Config = ModLina.Config or {}
 
+local function SetSecretsStatus(status, reason)
+	if not rawget(_G, "ModLinaState") or not ModLinaState then
+		return
+	end
+	ModLinaState.ai_secrets_status = status
+	ModLinaState.ai_secrets_reason = reason
+end
+
+local function ApplySecretsTable(secrets)
+	if type(secrets) ~= "table" then
+		return false, "secrets_not_table"
+	end
+
+	if not ModLinaState.api then
+		return false, "api_state_uninitialized"
+	end
+
+	if type(secrets.provider) == "string" and secrets.provider ~= "" then
+		ModLinaState.api.provider = secrets.provider
+	end
+	if type(secrets.endpoint) == "string" and secrets.endpoint ~= "" then
+		ModLinaState.api.endpoint = secrets.endpoint
+	end
+	if type(secrets.deployment) == "string" and secrets.deployment ~= "" then
+		ModLinaState.api.deployment = secrets.deployment
+	end
+	if type(secrets.model) == "string" and secrets.model ~= "" then
+		ModLinaState.api.model = secrets.model
+	end
+	if type(secrets.api_version) == "string" and secrets.api_version ~= "" then
+		ModLinaState.api.api_version = secrets.api_version
+	end
+	if type(secrets.key) == "string" then
+		ModLinaState.api.key = secrets.key
+	end
+
+	if ModLinaState.api.key == "" then
+		return false, "empty_api_key"
+	end
+
+	return true, nil
+end
+
 ---------------------------------------------------------------------------
 -- DEFAULT SETTINGS
 ---------------------------------------------------------------------------
@@ -164,6 +207,13 @@ function ModLina.Config.IsAIEnabled()
 	return ModLina.Config.GetAISetting("enabled") and true or false
 end
 
+function ModLina.Config.GetSecretsStatus()
+	if not rawget(_G, "ModLinaState") or not ModLinaState then
+		return "unknown", "state_unavailable"
+	end
+	return ModLinaState.ai_secrets_status or "unknown", ModLinaState.ai_secrets_reason
+end
+
 function ModLina.Config.IsNormalNotificationsEnabled()
 	EnsureConfigLoaded()
 	local val = table.get(ModLinaState, "ui", "normal_notifications")
@@ -319,6 +369,79 @@ function ModLina.Config.LoadSettings()
 	
 	-- Ensure all fields exist
 	EnsureConfigLoaded()
+
+	-- Load local secrets file after storage merge so local file can override saved values.
+	if ModLina.Config.LoadSecretsFile then
+		ModLina.Config.LoadSecretsFile()
+	end
+end
+
+function ModLina.Config.LoadSecretsFile()
+	EnsureConfigLoaded()
+	if rawget(_G, "print") then
+		print("[ModLina:AI_Config] Loading AI secrets file")
+	end
+
+	local dofile_fn = rawget(_G, "dofile")
+	if type(dofile_fn) ~= "function" then
+		if rawget(_G, "print") then
+			print("[ModLina:AI_Config] Cannot load AI secrets: dofile unavailable")
+		end
+		if ModLinaState.api and ModLinaState.api.key and ModLinaState.api.key ~= "" then
+			SetSecretsStatus("fallback_storage", nil)
+			if rawget(_G, "print") then
+				print("[ModLina:AI_Config] Using stored API credentials fallback")
+			end
+			return true, nil
+		end
+		SetSecretsStatus("unavailable", "dofile_unavailable")
+		return false, "dofile_unavailable"
+	end
+
+	local candidate_paths = {
+		"ai.secrets.lua",
+	}
+
+	if rawget(_G, "CurrentModPath") and type(CurrentModPath) == "string" and CurrentModPath ~= "" then
+		candidate_paths[#candidate_paths + 1] = CurrentModPath .. "ai.secrets.lua"
+	end
+
+	for i = 1, #candidate_paths do
+		local path = candidate_paths[i]
+		if rawget(_G, "print") then
+			print("[ModLina:AI_Config] Trying AI secrets path: " .. tostring(path))
+		end
+		local ok, loaded = pcall(dofile_fn, path)
+		if ok then
+			local apply_ok, apply_reason = ApplySecretsTable(loaded)
+			if apply_ok then
+				SetSecretsStatus("loaded", nil)
+				if rawget(_G, "print") then
+					print("[ModLina:AI_Config] AI secrets loaded successfully")
+				end
+				return true, nil
+			end
+			SetSecretsStatus("invalid", apply_reason)
+			if rawget(_G, "print") then
+				print("[ModLina:AI_Config] AI secrets invalid: " .. tostring(apply_reason))
+			end
+			return false, apply_reason
+		end
+	end
+
+	if ModLinaState.api and ModLinaState.api.key and ModLinaState.api.key ~= "" then
+		SetSecretsStatus("fallback_storage", nil)
+		if rawget(_G, "print") then
+			print("[ModLina:AI_Config] AI secrets file missing, using stored API credentials fallback")
+		end
+		return true, nil
+	end
+
+	SetSecretsStatus("missing", "secrets_file_not_found")
+	if rawget(_G, "print") then
+		print("[ModLina:AI_Config] AI secrets file not found")
+	end
+	return false, "secrets_file_not_found"
 end
 
 function ModLina.Config.SaveSettings()

@@ -365,6 +365,10 @@ function ModLina.PerformLLMRequest(request)
 end
 
 function ModLina.QueryLLM(user_request)
+    if rawget(_G, "print") then
+        print("[ModLina:AI_LLM] QueryLLM request received")
+    end
+
     local allowed, reason = ModLina.CanCallLLM()
     if not allowed then
         if rawget(_G, "print") then
@@ -381,6 +385,9 @@ function ModLina.QueryLLM(user_request)
 
     local provider = ModLina.Config.GetAPICredential("provider") or ""
     if provider ~= "AzureOpenAI" then
+        if rawget(_G, "print") then
+            print("[ModLina:AI_LLM] Unsupported provider: " .. tostring(provider))
+        end
         return {
             action = "NotifyPlayer",
             arguments = {
@@ -392,6 +399,9 @@ function ModLina.QueryLLM(user_request)
 
     local request, request_err = ModLina.BuildAzureChatRequest(user_request)
     if not request then
+        if rawget(_G, "print") then
+            print("[ModLina:AI_LLM] Request build failed: " .. tostring(request_err))
+        end
         return {
             action = "NotifyPlayer",
             arguments = {
@@ -403,6 +413,9 @@ function ModLina.QueryLLM(user_request)
 
     local started = now_ms()
     ModLina.RecordLLMCall()
+    if rawget(_G, "print") then
+        print("[ModLina:AI_LLM] Sending AI request")
+    end
 
     local raw_response, send_err = ModLina.PerformLLMRequest(request)
     local elapsed = now_ms() - started
@@ -411,6 +424,9 @@ function ModLina.QueryLLM(user_request)
     end
 
     if not raw_response then
+        if rawget(_G, "print") then
+            print("[ModLina:AI_LLM] Transport failure: " .. tostring(send_err))
+        end
         if rawget(_G, "ModLinaState") and ModLinaState then
             ModLinaState.ai_last_error = tostring(send_err)
         end
@@ -433,6 +449,9 @@ function ModLina.QueryLLM(user_request)
     end
 
     if not decoded then
+        if rawget(_G, "print") then
+            print("[ModLina:AI_LLM] Response decode failed: " .. tostring(decode_err))
+        end
         if rawget(_G, "ModLinaState") and ModLinaState then
             ModLinaState.ai_last_error = tostring(decode_err)
         end
@@ -447,6 +466,9 @@ function ModLina.QueryLLM(user_request)
 
     local result, parse_err = ModLina.ExtractActionFromAzureResponse(decoded)
     if not result then
+        if rawget(_G, "print") then
+            print("[ModLina:AI_LLM] Tool-call parse failed: " .. tostring(parse_err))
+        end
         if rawget(_G, "ModLinaState") and ModLinaState then
             ModLinaState.ai_last_error = tostring(parse_err)
         end
@@ -462,6 +484,9 @@ function ModLina.QueryLLM(user_request)
     if ModLina.ValidateLLMAction then
         local ok, validation_reason = ModLina.ValidateLLMAction(result.action, result.arguments or {})
         if not ok then
+            if rawget(_G, "print") then
+                print("[ModLina:AI_LLM] Action validation rejected: " .. tostring(validation_reason))
+            end
             return {
                 action = "NotifyPlayer",
                 arguments = {
@@ -474,6 +499,9 @@ function ModLina.QueryLLM(user_request)
 
     if rawget(_G, "ModLinaState") and ModLinaState then
         ModLinaState.ai_last_error = nil
+    end
+    if rawget(_G, "print") then
+        print("[ModLina:AI_LLM] AI action accepted: " .. tostring(result.action))
     end
     return result
 end

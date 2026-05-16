@@ -46,6 +46,27 @@ function ModLina.Initialize()
 	if ModLina.Config and ModLina.Config.LoadSettings then
 		ModLina.Config.LoadSettings()
 	end
+
+	-- One-time startup warning for missing/invalid local AI secrets file.
+	if not ModLinaState.ai_secrets_warning_shown and ModLina.Notify and ModLina.Notify.LinaSay and ModLina.Config and ModLina.Config.GetSecretsStatus then
+		local status, reason = ModLina.Config.GetSecretsStatus()
+		if status == "missing" or status == "invalid" or status == "unavailable" then
+			local msg = "AI secrets are not configured. Check ai.secrets.lua (AINA)."
+			if status == "invalid" and reason then
+				msg = "AI secrets are invalid (" .. tostring(reason) .. "). Check ai.secrets.lua (AINA)."
+			elseif status == "unavailable" and reason then
+				msg = "AI secrets file could not be loaded (" .. tostring(reason) .. "). Check ai.secrets.lua (AINA)."
+			end
+			ModLina.Notify.LinaSay(msg)
+			ModLinaState.ai_secrets_warning_shown = true
+		elseif status == "loaded" or status == "fallback_storage" then
+			local key = ModLina.Config.GetAPICredential and ModLina.Config.GetAPICredential("key") or ""
+			if not key or key == "" then
+				ModLina.Notify.LinaSay("AI API key is empty. Update ai.secrets.lua (AINA).")
+				ModLinaState.ai_secrets_warning_shown = true
+			end
+		end
+	end
 	
 	-- Initialize AI state snapshot system
 	if ModLina.UpdateState then
