@@ -4,16 +4,20 @@ PlaceObj('ModItemCode', {
 	'CodeFileName', "Code/main.lua",
 }),
 PlaceObj('ModItemCode', {
-	'name', "ModLina_Core",
-	'CodeFileName', "Code/ModLina_Core.lua",
-}),
-PlaceObj('ModItemCode', {
 	'name', "ModLina_Config",
 	'CodeFileName', "Code/ModLina_Config.lua",
 }),
 PlaceObj('ModItemCode', {
 	'name', "ModLina_Notifications",
 	'CodeFileName', "Code/ModLina_Notifications.lua",
+}),
+PlaceObj('ModItemCode', {
+	'name', "ModLina_Core",
+	'CodeFileName', "Code/ModLina_Core.lua",
+}),
+PlaceObj('ModItemCode', {
+	'name', "ModLina_AI_HTTPTransport",
+	'CodeFileName', "Code/AI_HTTPTransport.lua",
 }),
 PlaceObj('ModItemCode', {
 	'name', "ModLina_Advisor",

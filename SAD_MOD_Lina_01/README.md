@@ -75,7 +75,45 @@ return {
 
 If the secrets file is missing or invalid, Lina falls back to local safe behavior and will append `(AINA)` to affected messages.
 
+### HTTP Transport & Cloud API Calls
+
+Lina automatically attempts to make HTTP requests to your configured cloud AI provider (Azure OpenAI) using multiple fallback strategies:
+
+1. **Game Engine Hook** – If the game engine provides a `LuaHTTPRequest()` function at runtime
+2. **LuaSocket** – Standard Lua socket library for HTTP (`socket.http`)
+3. **Native HTTP** – Lua 5.4+ native `http.request` module (if available)
+4. **cURL** – Falls back to system `curl` command if nothing else works
+
+If all strategies fail, Lina gracefully returns `(AINA)` messages (AI Not Available) and logs detailed diagnostics to help troubleshoot.
+
+#### Diagnostic Command
+
+Check available HTTP strategies on your system:
+
+```lua
+if ModLina and ModLina.LLMTransport and ModLina.LLMTransport.GetAvailableStrategies then
+   print(table.concat(ModLina.LLMTransport.GetAvailableStrategies(), ", "))
+end
+```
+
+This shows which transport methods are functional in your environment:
+- `game_engine_hook` – Engine-provided HTTP (best)
+- `luasocket` – LuaSocket library available
+- `native_http` – Native Lua HTTP available
+- `curl` – System curl available (slowest)
+
+#### Troubleshooting HTTP Issues
+
+**Symptoms:** All API calls return `(AINA)` and no successful requests appear in Azure Portal metrics.
+
+**Steps:**
+1. Verify `ai.secrets.lua` exists and contains a non-empty `key` field
+2. Check mod logs for `[ModLina:AI_HTTPTransport]` messages
+3. Run the diagnostic command above to identify available strategies
+4. If none are available, install LuaSocket or ensure cURL is in system PATH
+
 ### First Run
+
 
 When you load a map, Lina will display:
 
