@@ -382,20 +382,86 @@ function ModLina.Config.LoadSecretsFile()
 		print("[ModLina:AI_Config] Loading AI secrets file")
 	end
 
-	local dofile_fn = rawget(_G, "dofile")
-	if type(dofile_fn) ~= "function" then
-		if rawget(_G, "print") then
-			print("[ModLina:AI_Config] Cannot load AI secrets: dofile unavailable")
+	local function ParseSecretsFromText(text)
+		if type(text) ~= "string" or text == "" then
+			return nil, "secrets_file_empty"
 		end
-		if ModLinaState.api and ModLinaState.api.key and ModLinaState.api.key ~= "" then
-			SetSecretsStatus("fallback_storage", nil)
-			if rawget(_G, "print") then
-				print("[ModLina:AI_Config] Using stored API credentials fallback")
+
+		local load_fn = rawget(_G, "load")
+		if type(load_fn) == "function" then
+			local chunk
+			local ok_chunk, chunk_or_err = pcall(load_fn, text, "=(ai.secrets.lua)", "t", {})
+			if ok_chunk and type(chunk_or_err) == "function" then
+				chunk = chunk_or_err
+			else
+				ok_chunk, chunk_or_err = pcall(load_fn, text, "=(ai.secrets.lua)")
+				if ok_chunk and type(chunk_or_err) == "function" then
+					chunk = chunk_or_err
+				end
 			end
-			return true, nil
+
+			if type(chunk) == "function" then
+				local ok_run, result = pcall(chunk)
+				if ok_run and type(result) == "table" then
+					return result, nil
+				end
+			end
 		end
-		SetSecretsStatus("unavailable", "dofile_unavailable")
-		return false, "dofile_unavailable"
+
+		local loadstring_fn = rawget(_G, "loadstring")
+		if type(loadstring_fn) == "function" then
+			local ok_chunk, chunk_or_err = pcall(loadstring_fn, text, "=(ai.secrets.lua)")
+			if ok_chunk and type(chunk_or_err) == "function" then
+				local ok_run, result = pcall(chunk_or_err)
+				if ok_run and type(result) == "table" then
+					return result, nil
+				end
+			end
+		end
+
+		-- Last-resort parser for simple key="value" secrets tables.
+		local parsed = {}
+		for key, value in text:gmatch("([%a_][%w_]*)%s*=%s*\"([^\"]*)\"") do
+			parsed[key] = value
+		end
+		for key, value in text:gmatch("([%a_][%w_]*)%s*=%s*'([^']*)'") do
+			parsed[key] = value
+		end
+
+		if next(parsed) then
+			return parsed, nil
+		end
+
+		return nil, "secrets_parse_failed"
+	end
+
+	local function TryLoadSecretsViaFileRead(path)
+		local io_table = rawget(_G, "io")
+		if type(io_table) ~= "table" or type(io_table.open) ~= "function" then
+			return false, "io_open_unavailable"
+		end
+
+		local f = io_table.open(path, "r")
+		if not f then
+			return false, "secrets_file_not_found"
+		end
+
+		local ok_read, text = pcall(f.read, f, "*a")
+		pcall(f.close, f)
+		if not ok_read then
+			return false, "secrets_file_read_failed"
+		end
+
+		local parsed, parse_reason = ParseSecretsFromText(text)
+		if type(parsed) == "table" then
+			return true, parsed
+		end
+		return false, parse_reason or "secrets_parse_failed"
+	end
+
+	local dofile_fn = rawget(_G, "dofile")
+	if type(dofile_fn) ~= "function" and rawget(_G, "print") then
+		print("[ModLina:AI_Config] dofile unavailable; using fallback secrets loader")
 	end
 
 	local candidate_paths = {
@@ -406,18 +472,46 @@ function ModLina.Config.LoadSecretsFile()
 		candidate_paths[#candidate_paths + 1] = CurrentModPath .. "ai.secrets.lua"
 	end
 
+	local saw_non_missing_error = false
+	local last_load_error = nil
+
 	for i = 1, #candidate_paths do
 		local path = candidate_paths[i]
 		if rawget(_G, "print") then
 			print("[ModLina:AI_Config] Trying AI secrets path: " .. tostring(path))
 		end
-		local ok, loaded = pcall(dofile_fn, path)
-		if ok then
+
+		local loaded = nil
+		local load_reason = nil
+
+		if type(dofile_fn) == "function" then
+			local ok, result = pcall(dofile_fn, path)
+			if ok and type(result) == "table" then
+				loaded = result
+			elseif ok and result ~= nil then
+				load_reason = "secrets_not_table"
+			else
+				load_reason = tostring(result)
+			end
+		end
+
+		if type(loaded) ~= "table" then
+			local read_ok, read_result = TryLoadSecretsViaFileRead(path)
+			if read_ok and type(read_result) == "table" then
+				loaded = read_result
+				load_reason = nil
+			else
+				load_reason = read_result or load_reason
+			end
+		end
+
+		if type(loaded) == "table" then
 			local apply_ok, apply_reason = ApplySecretsTable(loaded)
 			if apply_ok then
 				SetSecretsStatus("loaded", nil)
 				if rawget(_G, "print") then
 					print("[ModLina:AI_Config] AI secrets loaded successfully")
+					print("[ModLina:AI_Config] Active AI secrets path: " .. tostring(path))
 				end
 				return true, nil
 			end
@@ -427,6 +521,26 @@ function ModLina.Config.LoadSecretsFile()
 			end
 			return false, apply_reason
 		end
+
+		if load_reason and load_reason ~= "secrets_file_not_found" then
+			saw_non_missing_error = true
+			last_load_error = load_reason
+		end
+	end
+
+	if saw_non_missing_error then
+		SetSecretsStatus("unavailable", last_load_error or "secrets_loader_unavailable")
+		if rawget(_G, "print") then
+			print("[ModLina:AI_Config] AI secrets could not be loaded: " .. tostring(last_load_error))
+		end
+		if ModLinaState.api and ModLinaState.api.key and ModLinaState.api.key ~= "" then
+			SetSecretsStatus("fallback_storage", nil)
+			if rawget(_G, "print") then
+				print("[ModLina:AI_Config] Using stored API credentials fallback")
+			end
+			return true, nil
+		end
+		return false, last_load_error or "secrets_loader_unavailable"
 	end
 
 	if ModLinaState.api and ModLinaState.api.key and ModLinaState.api.key ~= "" then
