@@ -81,9 +81,9 @@ local CONFIG_DEFAULTS = {
 
 	-- API credentials (stored but not used in v1)
 	api = {
-		provider = "AzureOpenAI",    -- "OpenAI", "AzureOpenAI", "Claude", etc.
+		provider = "LocalBridge",    -- "LocalBridge" or "AzureOpenAI"
 		key = "",
-		endpoint = "https://gavin-mh49j2cg-eastus2.cognitiveservices.azure.com/",
+		endpoint = "http://127.0.0.1:8787",
 		model = "gpt-5-mini",
 		deployment = "gpt-5-mini",
 		api_version = "2025-01-01-preview",
@@ -558,6 +558,26 @@ function ModLina.Config.LoadSecretsFile()
 			end
 			return true, nil
 		end
+
+		if ModLinaState.api then
+			ModLinaState.api.provider = "LocalBridge"
+			if type(ModLinaState.api.endpoint) ~= "string" or ModLinaState.api.endpoint == "" then
+				ModLinaState.api.endpoint = "http://127.0.0.1:8787"
+			end
+			if type(ModLinaState.api.deployment) ~= "string" or ModLinaState.api.deployment == "" then
+				ModLinaState.api.deployment = "gpt-5-mini"
+			end
+			if type(ModLinaState.api.model) ~= "string" or ModLinaState.api.model == "" then
+				ModLinaState.api.model = "gpt-5-mini"
+			end
+			if type(ModLinaState.api.api_version) ~= "string" or ModLinaState.api.api_version == "" then
+				ModLinaState.api.api_version = "2025-01-01-preview"
+			end
+			if rawget(_G, "print") then
+				print("[ModLina:AI_Config] Switched API provider to LocalBridge due to sandboxed secrets loading")
+			end
+		end
+
 		return false, last_load_error or "secrets_loader_unavailable"
 	end
 

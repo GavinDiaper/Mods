@@ -56,6 +56,8 @@ Both Semi-Auto and Full Automation modes are scaffolded with extension points re
 
 To use cloud AI calls, create a local secrets file named `ai.secrets.lua` in the mod root.
 
+Note: Some game runtimes sandbox Lua file APIs (`dofile`, `io.open`). If that happens, use Local Bridge mode below instead of file-based secrets.
+
 - Required file: `SAD_MOD_Lina_01/ai.secrets.lua`
 - Included template/example: `SAD_MOD_Lina_01/ai.secrets.example.lua`
 - The live secrets file is ignored by git and should never be committed.
@@ -74,6 +76,32 @@ return {
 ```
 
 If the secrets file is missing or invalid, Lina falls back to local safe behavior and will append `(AINA)` to affected messages.
+
+### Local Bridge Mode (Recommended For Sandboxed Runtime)
+
+If the game blocks Lua file access, run a small local Node.js bridge and keep your Azure key outside the game process.
+
+Bridge files are in `SAD_MOD_Lina_01/bridge/`.
+
+1. Open terminal in `SAD_MOD_Lina_01/bridge`
+2. Run `npm install`
+3. Copy `.env.example` to `.env` and fill Azure values
+4. Run `npm start`
+
+Expected startup:
+
+```text
+[ModLina-Bridge] listening on http://127.0.0.1:8787
+```
+
+Mod defaults are already set for Local Bridge:
+- provider: `LocalBridge`
+- endpoint: `http://127.0.0.1:8787`
+- deployment/model: `gpt-5-mini`
+
+Optional auth:
+- Set `BRIDGE_TOKEN` in bridge `.env`
+- Set the same token in ModLina API key setting (`ModLinaState.api.key`)
 
 ### HTTP Transport & Cloud API Calls
 

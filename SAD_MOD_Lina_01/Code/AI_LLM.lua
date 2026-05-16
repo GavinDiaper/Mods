@@ -310,6 +310,69 @@ function ModLina.BuildAzureChatRequest(user_request)
     return request, nil
 end
 
+function ModLina.BuildLocalBridgeRequest(user_request)
+    local prompt = ModLina.BuildLLMPrompt(user_request)
+    local endpoint = trim_trailing_slash(ModLina.Config.GetAPICredential("endpoint") or "")
+    local deployment = ModLina.Config.GetAPICredential("deployment") or ModLina.Config.GetAPICredential("model") or "gpt-5-mini"
+    local api_version = ModLina.Config.GetAPICredential("api_version") or "2025-01-01-preview"
+    local bridge_token = ModLina.Config.GetAPICredential("key") or ""
+    local timeout_seconds = (ModLina.Config.GetAISetting and ModLina.Config.GetAISetting("timeout_seconds")) or 6
+
+    if endpoint == "" then
+        endpoint = "http://127.0.0.1:8787"
+    end
+
+    local request_body = {
+        messages = {
+            {
+                role = "system",
+                content = "You are Mod_Lina for Stranded: Alien Dawn. Call exactly one tool from the provided tool list. Do not output free text.",
+            },
+            {
+                role = "user",
+                content = "Player request: " .. tostring(prompt.request or "") .. "\nGame state: " .. tostring(ModLina.SerializeGameState() or "{}"),
+            },
+        },
+        tools = build_tool_schemas(),
+        tool_choice = "required",
+        max_completion_tokens = 500,
+        deployment = deployment,
+        api_version = api_version,
+    }
+
+    local body_json, encode_err = json_encode(request_body)
+    if not body_json then
+        return nil, encode_err or "request_encode_failed"
+    end
+
+    local headers = {
+        ["Content-Type"] = "application/json",
+    }
+    if bridge_token ~= "" then
+        headers["x-lina-bridge-token"] = bridge_token
+    end
+
+    local request = {
+        provider = "LocalBridge",
+        url = endpoint .. "/v1/lina/chat",
+        headers = headers,
+        body = body_json,
+        timeout_ms = math.max(1, tonumber(timeout_seconds) or 6) * 1000,
+    }
+
+    return request, nil
+end
+
+function ModLina.BuildProviderRequest(provider, user_request)
+    if provider == "AzureOpenAI" then
+        return ModLina.BuildAzureChatRequest(user_request)
+    end
+    if provider == "LocalBridge" then
+        return ModLina.BuildLocalBridgeRequest(user_request)
+    end
+    return nil, "unsupported_provider"
+end
+
 function ModLina.ExtractActionFromAzureResponse(decoded)
     if type(decoded) ~= "table" then
         return nil, "invalid_response"
@@ -383,7 +446,7 @@ function ModLina.QueryLLM(user_request)
     end
 
     local provider = ModLina.Config.GetAPICredential("provider") or ""
-    if provider ~= "AzureOpenAI" then
+    if provider ~= "AzureOpenAI" and provider ~= "LocalBridge" then
         if rawget(_G, "print") then
             print("[ModLina:AI_LLM] Unsupported provider: " .. tostring(provider))
         end
@@ -396,7 +459,7 @@ function ModLina.QueryLLM(user_request)
         }
     end
 
-    local request, request_err = ModLina.BuildAzureChatRequest(user_request)
+    local request, request_err = ModLina.BuildProviderRequest(provider, user_request)
     if not request then
         if rawget(_G, "print") then
             print("[ModLina:AI_LLM] Request build failed: " .. tostring(request_err))

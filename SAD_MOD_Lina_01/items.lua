@@ -1,15 +1,15 @@
 return {
 PlaceObj('ModItemCode', {
+	'name', "ModLina_LocalAISecrets",
+	'CodeFileName', "ai.secrets.lua",
+}),
+PlaceObj('ModItemCode', {
 	'name', "ModLina_Main",
 	'CodeFileName', "Code/main.lua",
 }),
 PlaceObj('ModItemCode', {
 	'name', "ModLina_Config",
 	'CodeFileName', "Code/ModLina_Config.lua",
-}),
-PlaceObj('ModItemCode', {
-	'name', "ModLina_LocalAISecrets",
-	'CodeFileName', "ai.secrets.lua",
 }),
 PlaceObj('ModItemCode', {
 	'name', "ModLina_Notifications",
