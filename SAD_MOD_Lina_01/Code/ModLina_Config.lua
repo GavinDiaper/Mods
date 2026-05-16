@@ -38,10 +38,12 @@ local CONFIG_DEFAULTS = {
 
 	-- API credentials (stored but not used in v1)
 	api = {
-		provider = "",    -- "OpenAI", "AzureOpenAI", "Claude", etc.
+		provider = "AzureOpenAI",    -- "OpenAI", "AzureOpenAI", "Claude", etc.
 		key = "",
-		endpoint = "",
-		model = "",
+		endpoint = "https://gavin-mh49j2cg-eastus2.cognitiveservices.azure.com/",
+		model = "gpt-5-mini",
+		deployment = "gpt-5-mini",
+		api_version = "2024-04-01-preview",
 	},
 
 	-- AI call governance (cloud calls are disabled by default)
@@ -50,6 +52,8 @@ local CONFIG_DEFAULTS = {
 		cooldown_seconds = 120,
 		max_calls_per_hour = 8,
 		max_calls_per_day = 25,
+		timeout_seconds = 6,
+		allow_mutating_actions = false,
 	},
 
 	-- Debug mode
@@ -255,6 +259,10 @@ function ModLina.Config.SetAISetting(key, value)
 		value = Max(0, tonumber(value) or CONFIG_DEFAULTS.ai.max_calls_per_hour)
 	elseif key == "max_calls_per_day" then
 		value = Max(0, tonumber(value) or CONFIG_DEFAULTS.ai.max_calls_per_day)
+	elseif key == "timeout_seconds" then
+		value = Max(1, tonumber(value) or CONFIG_DEFAULTS.ai.timeout_seconds)
+	elseif key == "allow_mutating_actions" then
+		value = value and true or false
 	else
 		return false
 	end

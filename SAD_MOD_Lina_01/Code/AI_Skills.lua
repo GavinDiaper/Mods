@@ -163,8 +163,12 @@ ModLina.Skills.PlanStep = function(args)
 end
 
 ModLina.Skills.ReportThreat = function(args)
-    local threat_type = args.threat_type or "Hostiles Lurking"
-    local message = threat_type
+    local label = args.label or args.threat_type or "Hostiles Lurking"
+    local count = args.enemy_count or args.count
+    local message = label
+    if type(count) == "number" and count > 0 then
+        message = message .. " (" .. tostring(count) .. ")"
+    end
     if rawget(_G, "print") then
         print("[ModLina:AI_Skills] ReportThreat executing: " .. message)
     end
