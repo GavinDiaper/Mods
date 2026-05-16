@@ -52,6 +52,29 @@ Both Semi-Auto and Full Automation modes are scaffolded with extension points re
 2. Enable the mod in the game's mod manager.
 3. Start a new game or load an existing save.
 
+### AI Secrets Setup
+
+To use cloud AI calls, create a local secrets file named `ai.secrets.lua` in the mod root.
+
+- Required file: `SAD_MOD_Lina_01/ai.secrets.lua`
+- Included template/example: `SAD_MOD_Lina_01/ai.secrets.example.lua`
+- The live secrets file is ignored by git and should never be committed.
+
+Example structure:
+
+```lua
+return {
+   provider = "AzureOpenAI",
+   endpoint = "https://your-resource.cognitiveservices.azure.com/",
+   deployment = "gpt-5-mini",
+   model = "gpt-5-mini",
+   api_version = "2024-04-01-preview",
+   key = "<your-api-key>",
+}
+```
+
+If the secrets file is missing or invalid, Lina falls back to local safe behavior and will append `(AINA)` to affected messages.
+
 ### First Run
 
 When you load a map, Lina will display:
@@ -236,6 +259,8 @@ ModLina.Config.SetAPICredential("model", "gpt-4")
 ```
 
 **Note**: Avoid pasting sensitive keys in console during streaming or public gameplay.
+
+For day-to-day use, prefer the local `ai.secrets.lua` file over console entry.
 
 ---
 
