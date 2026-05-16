@@ -1,7 +1,7 @@
 -- Example AI secrets file for Mod_Lina.
 -- Copy this content into ai.secrets.lua and set your real API key.
 
-return {
+local secrets = {
     provider = "AzureOpenAI",
     endpoint = "https://your-resource.cognitiveservices.azure.com/",
     deployment = "gpt-5-mini",
@@ -9,3 +9,7 @@ return {
     api_version = "2025-01-01-preview",
     key = "<your-api-key>",
 }
+
+rawset(_G, "ModLinaLocalAISecrets", secrets)
+
+return secrets

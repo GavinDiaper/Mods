@@ -382,6 +382,24 @@ function ModLina.Config.LoadSecretsFile()
 		print("[ModLina:AI_Config] Loading AI secrets file")
 	end
 
+	local preloaded_secrets = rawget(_G, "ModLinaLocalAISecrets")
+	if type(preloaded_secrets) == "table" then
+		local apply_ok, apply_reason = ApplySecretsTable(preloaded_secrets)
+		if apply_ok then
+			SetSecretsStatus("loaded", nil)
+			if rawget(_G, "print") then
+				print("[ModLina:AI_Config] AI secrets loaded successfully")
+				print("[ModLina:AI_Config] Active AI secrets path: preloaded_global:ModLinaLocalAISecrets")
+			end
+			return true, nil
+		end
+		SetSecretsStatus("invalid", apply_reason)
+		if rawget(_G, "print") then
+			print("[ModLina:AI_Config] Preloaded AI secrets invalid: " .. tostring(apply_reason))
+		end
+		return false, apply_reason
+	end
+
 	local function ParseSecretsFromText(text)
 		if type(text) ~= "string" or text == "" then
 			return nil, "secrets_file_empty"

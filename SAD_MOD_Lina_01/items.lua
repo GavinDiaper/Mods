@@ -8,6 +8,10 @@ PlaceObj('ModItemCode', {
 	'CodeFileName', "Code/ModLina_Config.lua",
 }),
 PlaceObj('ModItemCode', {
+	'name', "ModLina_LocalAISecrets",
+	'CodeFileName', "ai.secrets.lua",
+}),
+PlaceObj('ModItemCode', {
 	'name', "ModLina_Notifications",
 	'CodeFileName', "Code/ModLina_Notifications.lua",
 }),
