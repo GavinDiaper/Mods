@@ -6,20 +6,33 @@ ModLina = ModLina or {}
 
 function ModLina.ExecuteLLMAction(result)
     if not result or not result.action then 
+        if rawget(_G, "print") then
+            print("[ModLina:AI_Planner] ExecuteLLMAction called with null result")
+        end
         return false
+    end
+
+    if rawget(_G, "print") then
+        print("[ModLina:AI_Planner] ExecuteLLMAction - action: " .. tostring(result.action))
     end
 
     local skill = ModLina.Skills[result.action]
     if not skill then
         ModLina.LinaSay("Lina received unknown action: " .. tostring(result.action))
+        if rawget(_G, "print") then
+            print("[ModLina:AI_Planner] Skill not found: " .. tostring(result.action))
+        end
         return false
     end
 
     -- Execute the skill with provided arguments
+    if rawget(_G, "print") then
+        print("[ModLina:AI_Planner] Executing skill: " .. tostring(result.action))
+    end
     skill(result.arguments or {})
     
     -- Optionally explain reasoning
-    if result.reasoning then
+    if result.reasoning and result.action ~= "ReportThreat" then
         ModLina.LinaSay("Reasoning: " .. result.reasoning)
     end
     
@@ -42,36 +55,53 @@ function ModLina.CheckThreats()
     -- Called periodically or on combat start
     -- Analyzes threats and recommends/executes defensive actions
     
+    if rawget(_G, "print") then
+        print("[ModLina:AI_Planner] CheckThreats() called")
+    end
+    
     ModLina.UpdateState()
     local threats = ModLina.State.Threats or {}
     
     local total_enemies = (threats.ActiveEnemies and threats.ActiveEnemies.Total) or 0
     local total_nests = #(threats.ShriekerNests or {})
     
+    if rawget(_G, "print") then
+        print("[ModLina:AI_Planner] Threat check - Enemies: " .. tostring(total_enemies) .. ", Nests: " .. tostring(total_nests))
+    end
+    
     if total_enemies > 0 then
-        local enemy_summary = ""
-        if threats.ActiveEnemies.Animals and #threats.ActiveEnemies.Animals > 0 then
-            enemy_summary = enemy_summary .. #threats.ActiveEnemies.Animals .. " animals"
-        end
-        if threats.ActiveEnemies.Invaders and #threats.ActiveEnemies.Invaders > 0 then
-            if enemy_summary ~= "" then enemy_summary = enemy_summary .. ", " end
-            enemy_summary = enemy_summary .. #threats.ActiveEnemies.Invaders .. " invaders"
-        end
-        if threats.ActiveEnemies.Robots and #threats.ActiveEnemies.Robots > 0 then
-            if enemy_summary ~= "" then enemy_summary = enemy_summary .. ", " end
-            enemy_summary = enemy_summary .. #threats.ActiveEnemies.Robots .. " robots"
+        local nearest = ModLina.GetNearestThreatSummary and ModLina.GetNearestThreatSummary() or nil
+        local eta_seconds = nearest and nearest.EtaSeconds or nil
+        local threat_message = "Hostiles Lurking"
+
+        if eta_seconds and eta_seconds > 0 then
+            if eta_seconds <= 10 then
+                threat_message = "Attacking now"
+            elseif eta_seconds <= 90 then
+                local rounded = eta_seconds - (eta_seconds % 10)
+                if rounded < 10 then rounded = 10 end
+                threat_message = "Attacking in " .. tostring(rounded) .. "s"
+            else
+                threat_message = "Hostiles Nearby"
+            end
+        elseif nearest and nearest.Distance then
+            threat_message = "Hostiles Nearby"
         end
         
         -- Report threat
         local result = {
             action = "ReportThreat",
             arguments = {
-                threat_type = "Active Enemies",
+                threat_type = threat_message,
                 count = total_enemies,
-                details = enemy_summary
+                details = nil,
+                eta_seconds = eta_seconds,
             },
-            reasoning = "Combat detected. Alerting player to immediate threat."
+            reasoning = nil,
         }
+        if rawget(_G, "print") then
+            print("[ModLina:AI_Planner] Executing threat report: " .. tostring(threat_message))
+        end
         ModLina.ExecuteLLMAction(result)
     end
     
@@ -79,12 +109,15 @@ function ModLina.CheckThreats()
         local result = {
             action = "ReportThreat",
             arguments = {
-                threat_type = "Shrieker Nests",
+                threat_type = "Nest Nearby",
                 count = total_nests,
-                details = "Nests detected in vicinity"
+                details = nil,
             },
-            reasoning = "Territorial threats identified. Long-term concern."
+            reasoning = nil,
         }
+        if rawget(_G, "print") then
+            print("[ModLina:AI_Planner] Executing nest threat report")
+        end
         ModLina.ExecuteLLMAction(result)
     end
 end

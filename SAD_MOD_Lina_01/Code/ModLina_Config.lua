@@ -44,6 +44,14 @@ local CONFIG_DEFAULTS = {
 		model = "",
 	},
 
+	-- AI call governance (cloud calls are disabled by default)
+	ai = {
+		enabled = false,
+		cooldown_seconds = 120,
+		max_calls_per_hour = 8,
+		max_calls_per_day = 25,
+	},
+
 	-- Debug mode
 	debug = false,
 
@@ -71,6 +79,9 @@ local function EnsureConfigLoaded()
 	end
 	if not ModLinaState.api then
 		ModLinaState.api = table.copy(CONFIG_DEFAULTS.api)
+	end
+	if not ModLinaState.ai then
+		ModLinaState.ai = table.copy(CONFIG_DEFAULTS.ai)
 	end
 	if not ModLinaState.ui then
 		ModLinaState.ui = table.copy(CONFIG_DEFAULTS.ui)
@@ -134,6 +145,19 @@ end
 
 function ModLina.Config.IsDebugEnabled()
 	return ModLinaState.debug or CONFIG_DEFAULTS.debug
+end
+
+function ModLina.Config.GetAISetting(key)
+	EnsureConfigLoaded()
+	local val = table.get(ModLinaState, "ai", key)
+	if val == nil then
+		val = table.get(CONFIG_DEFAULTS, "ai", key)
+	end
+	return val
+end
+
+function ModLina.Config.IsAIEnabled()
+	return ModLina.Config.GetAISetting("enabled") and true or false
 end
 
 function ModLina.Config.IsNormalNotificationsEnabled()
@@ -216,6 +240,30 @@ function ModLina.Config.SetDebugEnabled(enabled)
 	return true
 end
 
+function ModLina.Config.SetAIEnabled(enabled)
+	EnsureConfigLoaded()
+	ModLinaState.ai.enabled = enabled and true or false
+	ModLina.Config.SaveSettings()
+	return true
+end
+
+function ModLina.Config.SetAISetting(key, value)
+	EnsureConfigLoaded()
+	if key == "cooldown_seconds" then
+		value = Max(0, tonumber(value) or CONFIG_DEFAULTS.ai.cooldown_seconds)
+	elseif key == "max_calls_per_hour" then
+		value = Max(0, tonumber(value) or CONFIG_DEFAULTS.ai.max_calls_per_hour)
+	elseif key == "max_calls_per_day" then
+		value = Max(0, tonumber(value) or CONFIG_DEFAULTS.ai.max_calls_per_day)
+	else
+		return false
+	end
+
+	ModLinaState.ai[key] = value
+	ModLina.Config.SaveSettings()
+	return true
+end
+
 function ModLina.Config.SetNormalNotificationsEnabled(enabled)
 	EnsureConfigLoaded()
 	ModLinaState.ui.normal_notifications = enabled and true or false
@@ -256,6 +304,7 @@ function ModLina.Config.LoadSettings()
 		if stored.cooldowns then ModLinaState.cooldowns = table.copy(stored.cooldowns) end
 		if stored.alerts_enabled then ModLinaState.alerts_enabled = table.copy(stored.alerts_enabled) end
 		if stored.api then ModLinaState.api = table.copy(stored.api) end
+		if stored.ai then ModLinaState.ai = table.copy(stored.ai) end
 		if stored.ui then ModLinaState.ui = table.copy(stored.ui) end
 		if stored.debug ~= nil then ModLinaState.debug = stored.debug end
 	end
@@ -275,6 +324,7 @@ function ModLina.Config.SaveSettings()
 		storage.cooldowns = table.copy(ModLinaState.cooldowns or {})
 		storage.alerts_enabled = table.copy(ModLinaState.alerts_enabled or {})
 		storage.api = table.copy(ModLinaState.api or {})
+		storage.ai = table.copy(ModLinaState.ai or {})
 		storage.ui = table.copy(ModLinaState.ui or {})
 		storage.debug = ModLinaState.debug
 		

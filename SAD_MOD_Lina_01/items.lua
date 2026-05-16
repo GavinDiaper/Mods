@@ -160,6 +160,56 @@ PlaceObj('ModItemOptionToggle', {
 	end,
 }),
 PlaceObj('ModItemOptionToggle', {
+	'name', "EnableAICloudCalls",
+	'DisplayName', "Enable AI Cloud Calls",
+	'Help', "Allow Lina to call cloud AI models. Disabled by default to prevent accidental usage.",
+	'DefaultValue', false,
+	'OnApply', function(self, value, prev_value)
+		if ModLina and ModLina.Config and ModLina.Config.SetAIEnabled then
+			ModLina.Config.SetAIEnabled(value)
+		end
+	end,
+}),
+PlaceObj('ModItemOptionNumber', {
+	'name', "AICooldownSeconds",
+	'DisplayName', "AI Cooldown (seconds)",
+	'Help', "Minimum seconds between AI cloud calls.",
+	'DefaultValue', 120,
+	'MinValue', 0,
+	'MaxValue', 3600,
+	'OnApply', function(self, value, prev_value)
+		if ModLina and ModLina.Config and ModLina.Config.SetAISetting then
+			ModLina.Config.SetAISetting("cooldown_seconds", tonumber(value) or 120)
+		end
+	end,
+}),
+PlaceObj('ModItemOptionNumber', {
+	'name', "AIMaxCallsPerHour",
+	'DisplayName', "AI Max Calls Per Hour",
+	'Help', "Hard cap for AI cloud calls in a rolling hour window.",
+	'DefaultValue', 8,
+	'MinValue', 0,
+	'MaxValue', 500,
+	'OnApply', function(self, value, prev_value)
+		if ModLina and ModLina.Config and ModLina.Config.SetAISetting then
+			ModLina.Config.SetAISetting("max_calls_per_hour", tonumber(value) or 8)
+		end
+	end,
+}),
+PlaceObj('ModItemOptionNumber', {
+	'name', "AIMaxCallsPerDay",
+	'DisplayName', "AI Max Calls Per Day",
+	'Help', "Hard cap for AI cloud calls in a daily window.",
+	'DefaultValue', 25,
+	'MinValue', 0,
+	'MaxValue', 5000,
+	'OnApply', function(self, value, prev_value)
+		if ModLina and ModLina.Config and ModLina.Config.SetAISetting then
+			ModLina.Config.SetAISetting("max_calls_per_day", tonumber(value) or 25)
+		end
+	end,
+}),
+PlaceObj('ModItemOptionToggle', {
 	'name', "ShowLinaHUD",
 	'DisplayName', "Show Lina HUD",
 	'Help', "Show or hide the in-play Lina HUD widget.",

@@ -15,6 +15,12 @@ if rawget(_G, "ModLinaState") == nil then
 		alert_cooldowns = {}, -- alert_type -> last_timestamp
 		latest_alert_text = "",
 		latest_alert_time = 0,
+		ai_last_call_time = 0,
+		ai_hour_window_start = 0,
+		ai_day_window_start = 0,
+		ai_calls_total = 0,
+		ai_calls_hour = 0,
+		ai_calls_day = 0,
 	}
 end
 
@@ -103,6 +109,10 @@ function ModLina.TickDaily()
 	if not ModLinaState.initialized then
 		return
 	end
+
+	-- Reset daily AI call window.
+	ModLinaState.ai_day_window_start = RealTime and RealTime() or 0
+	ModLinaState.ai_calls_day = 0
 
 	-- Placeholder for daily long-term analysis
 	-- Future: forecasting, trend analysis, etc.

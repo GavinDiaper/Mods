@@ -290,19 +290,25 @@ local function BuildHudText()
 	local hungry, stressed, entries = BuildVitalsSnapshot()
 	local cloth = GetClothCount()
 	local mode = GetModeText()
+	local ai_total = (rawget(_G, "ModLinaState") and (ModLinaState.ai_calls_total or 0)) or 0
+	local ai_hour = (rawget(_G, "ModLinaState") and (ModLinaState.ai_calls_hour or 0)) or 0
+	local ai_day = (rawget(_G, "ModLinaState") and (ModLinaState.ai_calls_day or 0)) or 0
 	local latest = (rawget(_G, "ModLinaState") and ModLinaState.latest_alert_text) or "No alerts yet"
 	local hud_mode = GetHudMode()
 	if hud_mode == "verbose" then
-		return string.format("<color 110 190 255>Lina Assistant</color>\nMode: %s\nHungry: %d | Stressed: %d | Cloth: %d\n%s\nLast: %s", mode, hungry, stressed, cloth, BuildVerboseVitalsLines(entries, 4), TrimText(latest, 180))
+		return string.format("<color 110 190 255>Lina Assistant</color>\nMode: %s\nHungry: %d | Stressed: %d | Cloth: %d\nAI Calls: total %d | hour %d | day %d\n%s\nLast: %s", mode, hungry, stressed, cloth, ai_total, ai_hour, ai_day, BuildVerboseVitalsLines(entries, 4), TrimText(latest, 180))
 	end
 	latest = TrimText(latest, 72)
-	return string.format("<color 110 190 255>Lina</color>  M:%s  H:%d  S:%d  Cloth:%d\n<color 180 220 255>%s</color>\n<color 220 220 170>Last:</color> %s", mode, hungry, stressed, cloth, TrimText(BuildCompactVitalsLine(entries, 2), 72), latest)
+	return string.format("<color 110 190 255>Lina</color>  M:%s  H:%d  S:%d  Cloth:%d  AI:%d\n<color 180 220 255>%s</color>\n<color 220 220 170>Last:</color> %s", mode, hungry, stressed, cloth, ai_total, TrimText(BuildCompactVitalsLine(entries, 2), 72), latest)
 end
 
 local function BuildRolloverText()
 	local mode = GetModeText()
 	local hungry, stressed, entries = BuildVitalsSnapshot()
 	local cloth = GetClothCount()
+	local ai_total = (rawget(_G, "ModLinaState") and (ModLinaState.ai_calls_total or 0)) or 0
+	local ai_hour = (rawget(_G, "ModLinaState") and (ModLinaState.ai_calls_hour or 0)) or 0
+	local ai_day = (rawget(_G, "ModLinaState") and (ModLinaState.ai_calls_day or 0)) or 0
 	local latest = (rawget(_G, "ModLinaState") and ModLinaState.latest_alert_text) or "No alerts yet"
 	local last_time = (rawget(_G, "ModLinaState") and ModLinaState.latest_alert_time) or 0
 	local ago = "n/a"
@@ -310,7 +316,7 @@ local function BuildRolloverText()
 		local sec = Max(0, (RealTime() - last_time) / 1000)
 		ago = string.format("%.0fs", sec)
 	end
-	return string.format("Mode: %s\nHungry survivors: %d\nStressed survivors: %d\nCloth: %d\n\nLive vitals:\n%s\n\nLatest alert (%s ago):\n%s", mode, hungry, stressed, cloth, BuildVerboseVitalsLines(entries, 8), ago, tostring(latest))
+	return string.format("Mode: %s\nHungry survivors: %d\nStressed survivors: %d\nCloth: %d\nAI calls: total %d | hour %d | day %d\n\nLive vitals:\n%s\n\nLatest alert (%s ago):\n%s", mode, hungry, stressed, cloth, ai_total, ai_hour, ai_day, BuildVerboseVitalsLines(entries, 8), ago, tostring(latest))
 end
 
 local function GetHudParent(igi)

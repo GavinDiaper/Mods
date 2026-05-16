@@ -24,6 +24,12 @@ function ModLina.Notify.SendRaw(title, message)
 		return
 	end
 
+	-- Prefer standard on-screen notifications that do not open narrative/story popups.
+	if rawget(_G, "AddOnScreenNotification") then
+		AddOnScreenNotification(title, message)
+		return
+	end
+
 	if rawget(_G, "AddCustomOnScreenNotification") then
 		AddCustomOnScreenNotification(
 			title,
@@ -57,7 +63,7 @@ function ModLina.Notify.SendRaw(title, message)
 end
 
 function ModLina.Notify.LinaSay(message)
-	local title = "Mod_Lina - Survivor Assistant"
+	local title = "Lina"
 	RecordLatestAlert(message)
 	ModLina.Notify.SendRaw(title, message)
 end
