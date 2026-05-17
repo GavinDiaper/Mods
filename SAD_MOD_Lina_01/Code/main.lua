@@ -227,5 +227,9 @@ function OnMsg.InvaderBehaviorAssign(unit, new_behavior)
 		if should_send_threat_fallback("invader_behavior_missing_debug", 120000) and rawget(_G, "print") then
 			print("[ModLina:DEBUG] UpdateState unavailable in InvaderBehaviorAssign")
 		end
+		send_threat_fallback("Hostiles Lurking", "invader_behavior")
+		if should_send_threat_fallback("invader_behavior_llm", 180000) and rawget(_G, "ModLina") and ModLina.HandlePlayerRequest then
+			ModLina.HandlePlayerRequest("Raid or hostile behavior detected. Provide one immediate defensive action.")
+		end
 	end
 end

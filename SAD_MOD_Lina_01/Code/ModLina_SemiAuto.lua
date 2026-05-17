@@ -1,9 +1,7 @@
 -- ModLina_SemiAuto.lua
 -- Semi-Auto Mode (B) - Framework only in v1
 
-if not rawget(_G, "ModLina") then
-	ModLina = {}
-end
+ModLina = rawget(_G, "ModLina") or {}
 
 ModLina.SemiAuto = ModLina.SemiAuto or {}
 

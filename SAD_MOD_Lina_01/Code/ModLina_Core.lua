@@ -2,9 +2,7 @@
 -- Namespace initialization, global state, and lifecycle management
 
 -- Establish safe global namespace with FirstLoad guards
-if not rawget(_G, "ModLina") then
-	ModLina = {}
-end
+ModLina = rawget(_G, "ModLina") or {}
 
 -- Persistent state tables (survive reload/game reload)
 if rawget(_G, "ModLinaState") == nil then

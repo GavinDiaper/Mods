@@ -6,3 +6,4 @@
 /SAD_CommonLib
 *.md
 /SAD_MOD_Lina_01/ai.secrets.lua
+node_modules/

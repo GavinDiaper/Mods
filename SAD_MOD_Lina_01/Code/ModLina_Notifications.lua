@@ -1,9 +1,7 @@
 -- ModLina_Notifications.lua
 -- Notification system with anti-spam cooldowns
 
-if not rawget(_G, "ModLina") then
-	ModLina = {}
-end
+ModLina = rawget(_G, "ModLina") or {}
 
 ModLina.Notify = ModLina.Notify or {}
 

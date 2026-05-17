@@ -1,9 +1,7 @@
 -- ModLina_HUD.lua
 -- Compact in-play Lina HUD widget (InfoBeacon style).
 
-if not rawget(_G, "ModLina") then
-	ModLina = {}
-end
+ModLina = rawget(_G, "ModLina") or {}
 
 ModLina.HUD = ModLina.HUD or {}
 

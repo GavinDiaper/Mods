@@ -1,9 +1,7 @@
 -- ModLina_FullAuto.lua
 -- Full-Auto Mode (C) - Framework only in v1
 
-if not rawget(_G, "ModLina") then
-	ModLina = {}
-end
+ModLina = rawget(_G, "ModLina") or {}
 
 ModLina.FullAuto = ModLina.FullAuto or {}
 

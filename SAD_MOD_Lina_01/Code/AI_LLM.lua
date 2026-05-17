@@ -1,4 +1,4 @@
-ModLina = ModLina or {}
+ModLina = rawget(_G, "ModLina") or {}
 
 local function now_ms()
     return (RealTime and RealTime()) or 0
@@ -235,7 +235,11 @@ function ModLina.RecordLLMCall()
 end
 
 function ModLina.BuildLLMPrompt(user_request)
-    ModLina.UpdateState()
+    if ModLina.UpdateState then
+        ModLina.UpdateState()
+    elseif rawget(_G, "print") then
+        print("[ModLina:AI_LLM] UpdateState unavailable while building prompt; using current cached state")
+    end
 
     local state = ModLina.State
 

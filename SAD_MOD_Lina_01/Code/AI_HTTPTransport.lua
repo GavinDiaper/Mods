@@ -2,9 +2,7 @@
 -- HTTP transport layer for Azure OpenAI API calls
 -- Implements ModLina.LLMTransport.Send hook
 
-if not rawget(_G, "ModLina") then
-	ModLina = {}
-end
+ModLina = rawget(_G, "ModLina") or {}
 
 ModLina.LLMTransport = ModLina.LLMTransport or {}
 

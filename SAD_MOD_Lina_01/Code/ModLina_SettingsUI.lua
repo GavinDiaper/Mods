@@ -1,9 +1,7 @@
 -- ModLina_SettingsUI.lua
 -- In-game settings panel using XTemplate
 
-if not rawget(_G, "ModLina") then
-	ModLina = {}
-end
+ModLina = rawget(_G, "ModLina") or {}
 
 ModLina.SettingsUI = ModLina.SettingsUI or {}
 

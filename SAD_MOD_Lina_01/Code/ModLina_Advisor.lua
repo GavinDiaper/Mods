@@ -1,9 +1,7 @@
 -- ModLina_Advisor.lua
 -- Advisor Mode (A) - monitoring and alerts only
 
-if not rawget(_G, "ModLina") then
-	ModLina = {}
-end
+ModLina = rawget(_G, "ModLina") or {}
 
 ModLina.Advisor = ModLina.Advisor or {}
 

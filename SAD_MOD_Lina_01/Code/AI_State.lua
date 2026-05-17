@@ -1,4 +1,4 @@
-ModLina = ModLina or {}
+ModLina = rawget(_G, "ModLina") or {}
 
 ModLina.State = {
     Survivors = {},

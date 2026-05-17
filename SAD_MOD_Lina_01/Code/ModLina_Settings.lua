@@ -1,9 +1,7 @@
 -- ModLina_Settings.lua
 -- In-game settings UI dialog and menu integration
 
-if not rawget(_G, "ModLina") then
-	ModLina = {}
-end
+ModLina = rawget(_G, "ModLina") or {}
 
 ModLina.Settings = ModLina.Settings or {}
 

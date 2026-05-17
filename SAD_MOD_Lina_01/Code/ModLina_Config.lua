@@ -1,9 +1,7 @@
 -- ModLina_Config.lua
 -- Player configuration, settings persistence, and defaults
 
-if not rawget(_G, "ModLina") then
-	ModLina = {}
-end
+ModLina = rawget(_G, "ModLina") or {}
 
 ModLina.Config = ModLina.Config or {}
 
