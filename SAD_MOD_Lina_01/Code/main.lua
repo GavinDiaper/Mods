@@ -37,6 +37,26 @@ local function send_threat_fallback(message, event_key)
 	end
 end
 
+local function request_threat_ai_response(prompt, event_key)
+	if not should_send_threat_fallback(event_key, 180000) then
+		return
+	end
+
+	if rawget(_G, "print") then
+		print("[ModLina:DEBUG] Requesting AI threat response: " .. tostring(prompt))
+	end
+
+	if not (rawget(_G, "ModLina") and ModLina.QueryLLM and ModLina.ExecuteLLMAction) then
+		if rawget(_G, "print") then
+			print("[ModLina:DEBUG] AI request path unavailable")
+		end
+		return
+	end
+
+	local result = ModLina.QueryLLM(prompt)
+	ModLina.ExecuteLLMAction(result)
+end
+
 ---------------------------------------------------------------------------
 -- NEW GAME - Initialize Lina on new map
 ---------------------------------------------------------------------------
@@ -228,8 +248,6 @@ function OnMsg.InvaderBehaviorAssign(unit, new_behavior)
 			print("[ModLina:DEBUG] UpdateState unavailable in InvaderBehaviorAssign")
 		end
 		send_threat_fallback("Hostiles Lurking", "invader_behavior")
-		if should_send_threat_fallback("invader_behavior_llm", 180000) and rawget(_G, "ModLina") and ModLina.HandlePlayerRequest then
-			ModLina.HandlePlayerRequest("Raid or hostile behavior detected. Provide one immediate defensive action.")
-		end
+		request_threat_ai_response("Raid or hostile behavior detected. Provide one immediate defensive action.", "invader_behavior_llm")
 	end
 end

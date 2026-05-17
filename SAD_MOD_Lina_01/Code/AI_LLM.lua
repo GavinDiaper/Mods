@@ -198,7 +198,8 @@ function ModLina.CanCallLLM()
 
     ensure_ai_windows()
 
-    if not (ModLina.Config and ModLina.Config.IsAIEnabled and ModLina.Config.IsAIEnabled()) then
+    local provider = ModLina.Config and ModLina.Config.GetAPICredential and ModLina.Config.GetAPICredential("provider") or ""
+    if provider ~= "LocalBridge" and not (ModLina.Config and ModLina.Config.IsAIEnabled and ModLina.Config.IsAIEnabled()) then
         return false, "AI cloud disabled"
     end
 
