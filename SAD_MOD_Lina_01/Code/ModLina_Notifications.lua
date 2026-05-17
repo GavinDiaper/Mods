@@ -37,24 +37,6 @@ function ModLina.Notify.SendRaw(title, message)
 		return
 	end
 
-	-- Fallback path using StoryBit notifications (works reliably in live maps)
-	if rawget(_G, "StoryBit") and rawget(_G, "StoryBits") and rawget(_G, "ForceActivateStoryBit") then
-		local id = string.format("ModLinaAlert_%d", RealTime())
-		local dummy = StoryBit:new{
-			Category = "",
-			Enabled = true,
-			ExpirationTime = max_int,
-			NotificationTitle = title,
-			Text = message,
-			Title = title,
-			Trigger = "",
-			id = id,
-		}
-		StoryBits[id] = dummy
-		ForceActivateStoryBit(id, nil, "immediate", nil, true)
-		return
-	end
-
 	if rawget(_G, "print") then
 		print(string.format("[ModLina] %s: %s", tostring(title), tostring(message)))
 	end

@@ -38,7 +38,8 @@ local function send_threat_fallback(message, event_key)
 end
 
 local function request_threat_ai_response(prompt, event_key)
-	if not should_send_threat_fallback(event_key, 180000) then
+	local ai_event_key = tostring(event_key or "generic") .. "_ai"
+	if not should_send_threat_fallback(ai_event_key, 180000) then
 		return
 	end
 
