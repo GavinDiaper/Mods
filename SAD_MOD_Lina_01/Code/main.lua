@@ -47,15 +47,33 @@ local function request_threat_ai_response(prompt, event_key)
 		print("[ModLina:DEBUG] Requesting AI threat response: " .. tostring(prompt))
 	end
 
-	if not (rawget(_G, "ModLina") and ModLina.QueryLLM and ModLina.ExecuteLLMAction) then
+	if not (rawget(_G, "ModLina") and ModLina.QueryLLM) then
 		if rawget(_G, "print") then
-			print("[ModLina:DEBUG] AI request path unavailable")
+			local missing = {}
+			if not rawget(_G, "ModLina") then
+				missing[#missing + 1] = "ModLina"
+			elseif not ModLina.QueryLLM then
+				missing[#missing + 1] = "QueryLLM"
+			end
+			print("[ModLina:DEBUG] AI request path unavailable: " .. table.concat(missing, ","))
 		end
 		return
 	end
 
 	local result = ModLina.QueryLLM(prompt)
-	ModLina.ExecuteLLMAction(result)
+	if ModLina.ExecuteLLMAction then
+		ModLina.ExecuteLLMAction(result)
+		return
+	end
+
+	if result and result.action == "NotifyPlayer" and rawget(_G, "ModLina") and ModLina.Notify and ModLina.Notify.LinaSay then
+		ModLina.Notify.LinaSay(result.arguments and result.arguments.message or "AI response received.")
+		return
+	end
+
+	if rawget(_G, "print") then
+		print("[ModLina:DEBUG] AI planner unavailable after QueryLLM")
+	end
 end
 
 ---------------------------------------------------------------------------

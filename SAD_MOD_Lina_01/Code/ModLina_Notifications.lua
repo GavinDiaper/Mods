@@ -48,6 +48,8 @@ function ModLina.Notify.LinaSay(message)
 	ModLina.Notify.SendRaw(title, message)
 end
 
+ModLina.LinaSay = ModLina.Notify.LinaSay
+
 ---------------------------------------------------------------------------
 -- COOLDOWN TRACKING
 ---------------------------------------------------------------------------
